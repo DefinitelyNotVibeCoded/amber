@@ -1,0 +1,39 @@
+<svg width="900" height="260" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, sans-serif">
+  <defs>
+    <linearGradient id="amberBody2" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#f8dfa0"/>
+      <stop offset="48%" stop-color="#e0a53f"/>
+      <stop offset="100%" stop-color="#8a5a1c"/>
+    </linearGradient>
+  </defs>
+  <rect width="900" height="260" fill="#141310" rx="14"/>
+
+  <!-- left: stdio clients -->
+  <rect x="40" y="45" width="220" height="90" rx="10" fill="#1d1c18" stroke="#38352c"/>
+  <text x="60" y="70" font-size="13" fill="#ede8db" font-weight="600">stdio</text>
+  <text x="60" y="92" font-size="12" fill="#b3ac9c">Claude Desktop / Code</text>
+  <text x="60" y="110" font-size="12" fill="#b3ac9c">Cursor · Windsurf · Gemini CLI · VS Code</text>
+
+  <!-- left: http clients -->
+  <rect x="40" y="150" width="220" height="70" rx="10" fill="#1d1c18" stroke="#38352c"/>
+  <text x="60" y="173" font-size="13" fill="#ede8db" font-weight="600">Streamable HTTP</text>
+  <text x="60" y="195" font-size="12" fill="#b3ac9c">OpenAI Agents SDK · Responses API</text>
+  <text x="60" y="211" font-size="12" fill="#b3ac9c">ChatGPT connectors*</text>
+
+  <!-- connecting lines -->
+  <path d="M 260 90 C 400 90, 420 100, 460 118" stroke="#e3aa4a" stroke-opacity="0.55" fill="none"/>
+  <path d="M 260 185 C 400 185, 420 150, 460 128" stroke="#e3aa4a" stroke-opacity="0.55" fill="none"/>
+
+  <!-- center: amber -->
+  <g transform="translate(560,130)">
+    <rect x="-80" y="-55" width="160" height="110" rx="14" fill="#211f1b" stroke="#38352c"/>
+    <g transform="translate(-16,-40) scale(1.4)">
+      <polygon points="16,2 27,9 27,23 16,30 5,23 5,9" fill="url(#amberBody2)"/>
+    </g>
+    <text x="0" y="4" text-anchor="middle" font-size="14" fill="#ede8db" font-weight="600">Amber</text>
+    <text x="0" y="22" text-anchor="middle" font-size="11" fill="#7c7466">vault/*.md on disk</text>
+    <text x="0" y="40" text-anchor="middle" font-size="11" fill="#e3aa4a">7 MCP tools</text>
+  </g>
+
+  <text x="780" y="235" font-size="10" fill="#5e574a" text-anchor="middle">*needs a tunnel — ChatGPT can't reach localhost</text>
+</svg>
