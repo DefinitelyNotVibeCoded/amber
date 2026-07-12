@@ -12,7 +12,7 @@ Obsidian popularized the personal-wiki-of-markdown-files workflow: a local
 folder ("vault") of `.md` notes, linked with `[[wiki-links]]`, browsable as a
 graph. It predates [OKF](/concepts/okf.md) and uses its own linking dialect
 rather than OKF's plain markdown-link convention, so an Obsidian vault isn't
-automatically an OKF bundle — but the two patterns solve the same underlying
+automatically an OKF bundle, but the two patterns solve the same underlying
 problem in similar shapes.
 
 [Amber](/tools/amber.md) borrows Obsidian's three-pane layout and graph view,

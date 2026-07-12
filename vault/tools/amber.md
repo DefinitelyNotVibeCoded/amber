@@ -18,10 +18,10 @@ and renders:
   timestamp) shown as a metadata card above the rendered body
 * a force-directed [knowledge graph](/concepts/knowledge-graph.md) colored by
   `type`, with backlinks surfaced under every note
-* in-place editing that writes straight back to the underlying `.md` file —
+* in-place editing that writes straight back to the underlying `.md` file,
   no database, no proprietary format
 
 Where Obsidian is opaque volcanic glass built around its own `[[wiki-link]]`
-dialect, Amber is named for the transparent, preserving counterpart — built
+dialect, Amber is named for the transparent, preserving counterpart, built
 for a format designed to be read by anyone's tooling, including
 [Obsidian](/tools/obsidian.md) itself.

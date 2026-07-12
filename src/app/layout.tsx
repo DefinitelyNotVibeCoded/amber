@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Amber — OKF Vault",
+  title: "Amber: OKF Vault",
   description: "An Obsidian-style app for browsing and editing Open Knowledge Format bundles.",
 };
 

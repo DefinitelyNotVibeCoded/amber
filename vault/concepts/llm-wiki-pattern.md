@@ -8,8 +8,8 @@ timestamp: 2026-06-01T00:00:00Z
 
 # LLM Wiki Pattern
 
-An "LLM wiki" is a knowledge base — concept pages, entity pages, decision
-logs — written as plain markdown, where an AI agent (not a human) does most of
+An "LLM wiki" is a knowledge base (concept pages, entity pages, decision
+logs) written as plain markdown, where an AI agent (not a human) does most of
 the extracting, summarizing, cross-linking, and maintaining. The human drops
 raw material in; the agent keeps the wiki coherent.
 
@@ -21,5 +21,5 @@ own ad-hoc schema.
 ## Why it matters
 
 * The wiki is a durable artifact, not a chat transcript that evaporates.
-* It's diffable and versionable — it lives in git alongside code.
+* It's diffable and versionable: it lives in git alongside code.
 * It's queryable by both humans (browsing) and agents (retrieval).

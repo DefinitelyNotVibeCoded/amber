@@ -35,5 +35,5 @@
     <text x="0" y="40" text-anchor="middle" font-size="11" fill="#e3aa4a">7 MCP tools</text>
   </g>
 
-  <text x="780" y="235" font-size="10" fill="#5e574a" text-anchor="middle">*needs a tunnel — ChatGPT can't reach localhost</text>
+  <text x="780" y="235" font-size="10" fill="#5e574a" text-anchor="middle">*needs a tunnel, ChatGPT can't reach localhost</text>
 </svg>

@@ -296,7 +296,7 @@ export default function SettingsModal({
                   <div className="flex flex-col gap-2">
                     <p className="text-[11px] text-[var(--text-2)]">
                       Start the server once:{" "}
-                      <code className="text-[var(--accent-bright)]">{mcpConfig?.startHttpCommand}</code> — it listens on{" "}
+                      <code className="text-[var(--accent-bright)]">{mcpConfig?.startHttpCommand}</code>, it listens on{" "}
                       <code className="text-[var(--text-1)]">{mcpConfig?.httpUrl}</code> (loopback only).
                     </p>
                     {httpConnector.code && <CopyBlock text={httpConnector.code} />}
@@ -322,7 +322,7 @@ export default function SettingsModal({
                   </div>
                 </div>
                 <p className="text-[12.5px] text-[var(--text-1)] leading-relaxed max-w-[480px]">
-                  An Obsidian-style local app for browsing, linking, and editing Open Knowledge Format (OKF) bundles — built for
+                  An Obsidian-style local app for browsing, linking, and editing Open Knowledge Format (OKF) bundles, built for
                   notes that both you and AI agents maintain.
                 </p>
                 <div>

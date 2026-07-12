@@ -98,7 +98,7 @@ export async function GET() {
       chatgpt: {
         label: "ChatGPT connectors",
         note:
-          "ChatGPT's connector picker only accepts a public HTTPS URL, not localhost — it can't reach a server running on your machine directly. Run `npm run mcp:http` to start Amber's MCP server locally, then expose it with a tunnel (e.g. `npx mcp-remote " +
+          "ChatGPT's connector picker only accepts a public HTTPS URL, not localhost. It can't reach a server running on your machine directly. Run `npm run mcp:http` to start Amber's MCP server locally, then expose it with a tunnel (e.g. `npx mcp-remote " +
           httpUrl +
           "`, or `cloudflared tunnel --url " +
           httpUrl +

@@ -6,7 +6,7 @@ import { createAmberServer } from "./tools";
 
 const PORT = process.env.AMBER_MCP_HTTP_PORT ? Number(process.env.AMBER_MCP_HTTP_PORT) : 8420;
 
-// DNS-rebinding-protected Express app, bound to localhost only — this is a
+// DNS-rebinding-protected Express app, bound to localhost only. This is a
 // stateless MCP server: each POST gets its own server+transport pair, which
 // is the documented-safe pattern for sessionIdGenerator: undefined.
 const app = createMcpExpressApp();
@@ -37,7 +37,7 @@ app.delete("/mcp", async (_req, res) => {
   res.writeHead(405).end(JSON.stringify({ jsonrpc: "2.0", error: { code: -32000, message: "Method not allowed." }, id: null }));
 });
 
-// Bind explicitly to loopback only — never expose vault write access to the LAN.
+// Bind explicitly to loopback only. Never expose vault write access to the LAN.
 app.listen(PORT, "127.0.0.1", () => {
-  console.error(`Amber MCP server (Streamable HTTP) listening on http://127.0.0.1:${PORT}/mcp — vault: ${getVaultPath()}`);
+  console.error(`Amber MCP server (Streamable HTTP) listening on http://127.0.0.1:${PORT}/mcp, vault: ${getVaultPath()}`);
 });

@@ -7,7 +7,7 @@ async function main() {
   const server = createAmberServer();
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error(`Amber MCP server running via stdio — vault: ${getVaultPath()}`);
+  console.error(`Amber MCP server running via stdio, vault: ${getVaultPath()}`);
 }
 
 main().catch((error) => {

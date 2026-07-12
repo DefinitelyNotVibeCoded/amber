@@ -62,5 +62,5 @@
 
   <text x="290" y="128" font-family="Georgia, 'Times New Roman', serif" font-size="64" font-weight="700" fill="#ede8db" letter-spacing="-1">Amber</text>
   <text x="292" y="164" font-family="-apple-system, Segoe UI, sans-serif" font-size="19" fill="#b3ac9c">A local, Obsidian-style app for Open Knowledge Format bundles</text>
-  <text x="292" y="192" font-family="-apple-system, Segoe UI, sans-serif" font-size="19" fill="#b3ac9c">— built for notes that both you and AI agents maintain.</text>
+  <text x="292" y="192" font-family="-apple-system, Segoe UI, sans-serif" font-size="19" fill="#b3ac9c">built for notes that both you and AI agents maintain.</text>
 </svg>

@@ -10,7 +10,7 @@ timestamp: 2026-06-12T00:00:00Z
 # Open Knowledge Format (OKF)
 
 OKF v0.1 is a Google Cloud specification for representing organizational
-knowledge — metrics, tables, datasets, APIs, runbooks — as a directory of
+knowledge (metrics, tables, datasets, APIs, runbooks) as a directory of
 plain markdown files with a small set of reserved YAML frontmatter keys, so
 that bundles produced by one system can be consumed by another without a
 translation layer.
@@ -20,8 +20,8 @@ brain" maintained as markdown, but readable by both humans and AI agents.
 
 ## Schema
 
-Only `type` is required. Everything else — `title`, `description`,
-`resource`, `tags`, `timestamp` — is recommended but optional, and producers
+Only `type` is required. Everything else (`title`, `description`,
+`resource`, `tags`, `timestamp`) is recommended but optional, and producers
 may add arbitrary extension fields that consumers must preserve.
 
 ## Examples
@@ -39,5 +39,5 @@ timestamp: 2026-05-28T14:30:00Z
 
 ## Citations
 
-[1] [Google Cloud Blog — How the Open Knowledge Format can improve data sharing](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing/)
-[2] [OKF spec — GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
+[1] [Google Cloud Blog: How the Open Knowledge Format can improve data sharing](https://cloud.google.com/blog/products/data-analytics/how-the-open-knowledge-format-can-improve-data-sharing/)
+[2] [OKF spec: GoogleCloudPlatform/knowledge-catalog](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)

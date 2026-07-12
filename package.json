@@ -2,7 +2,7 @@
   "name": "amber",
   "version": "0.3.0",
   "private": true,
-  "description": "Amber — an Obsidian-style local app for OKF (Open Knowledge Format) bundles.",
+  "description": "Amber: an Obsidian-style local app for OKF (Open Knowledge Format) bundles.",
   "author": "Amber",
   "main": "electron/main.js",
   "scripts": {

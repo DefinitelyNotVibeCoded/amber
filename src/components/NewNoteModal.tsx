@@ -102,7 +102,7 @@ export default function NewNoteModal({
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[var(--text-1)] text-[11.5px] font-medium">
-              Filename <span className="text-[var(--text-2)] font-normal">(optional — derived from title)</span>
+              Filename <span className="text-[var(--text-2)] font-normal">(optional, derived from title)</span>
             </span>
             <input
               value={filename}

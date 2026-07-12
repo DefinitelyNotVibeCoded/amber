@@ -1,7 +1,7 @@
 # Second Brain Tools & Formats
 
 A small OKF bundle about the Open Knowledge Format itself, and the tools built
-around it — used here as sample content for **Amber**.
+around it, used here as sample content for **Amber**.
 
 ## Concepts
 * [Open Knowledge Format](/concepts/okf.md) - the spec this whole bundle demonstrates
