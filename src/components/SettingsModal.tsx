@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Settings as SettingsIcon, FolderCog, Plug, Info, Copy, Check, ExternalLink } from "lucide-react";
+import { X, Settings as SettingsIcon, FolderCog, Plug, Info, Copy, Check, ExternalLink, FolderPlus } from "lucide-react";
 import Logo from "./Logo";
+import NewVaultModal from "./NewVaultModal";
 
 type Tab = "general" | "mcp" | "about";
 
@@ -117,6 +118,7 @@ export default function SettingsModal({
   const [mcpConfig, setMcpConfig] = useState<McpConfigResponse | null>(null);
   const [connector, setConnector] = useState<string>("claudeDesktop");
   const [transport, setTransport] = useState<"local" | "remote">("local");
+  const [showNewVault, setShowNewVault] = useState(false);
 
   useEffect(() => {
     fetch("/api/version")
@@ -203,6 +205,16 @@ export default function SettingsModal({
                     className="px-3.5 py-1.5 rounded-full text-[13px] font-medium bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[#211a0d] disabled:opacity-60 shadow-[0_2px_8px_-2px_rgba(227,170,74,0.5)] w-fit"
                   >
                     {saving ? "Switching…" : "Switch vault"}
+                  </button>
+                </div>
+
+                <div className="pt-3 mt-1 border-t border-[var(--border-soft)]">
+                  <p className="text-[12px] text-[var(--text-2)] mb-2">Starting fresh instead?</p>
+                  <button
+                    onClick={() => setShowNewVault(true)}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-[var(--radius-sm)] text-[12.5px] text-[var(--text-1)] bg-[var(--bg-2)] border border-[var(--border-soft)] hover:text-[var(--text-0)] transition-colors w-fit"
+                  >
+                    <FolderPlus size={13} /> Create new vault
                   </button>
                 </div>
               </div>
@@ -348,6 +360,17 @@ export default function SettingsModal({
           </div>
         </div>
       </div>
+
+      {showNewVault && (
+        <NewVaultModal
+          onClose={() => setShowNewVault(false)}
+          onCreated={(newPath) => {
+            setShowNewVault(false);
+            setValue(newPath);
+            onSaved();
+          }}
+        />
+      )}
     </div>
   );
 }

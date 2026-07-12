@@ -53,11 +53,17 @@ function resolveLinkTarget(raw: string, fromNotePath: string): string | null {
   return resolved.startsWith("/") ? resolved : "/" + resolved;
 }
 
+/** Strip fenced code blocks and inline code spans so literal `[text](path.md)` shown as documentation doesn't get parsed as a real link. */
+function stripCodeForLinkScan(body: string): string {
+  return body.replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+}
+
 function extractLinks(body: string, fromNotePath: string): OkfLink[] {
   const links: OkfLink[] = [];
+  const scanText = stripCodeForLinkScan(body);
   let m: RegExpExecArray | null;
   LINK_RE.lastIndex = 0;
-  while ((m = LINK_RE.exec(body)) !== null) {
+  while ((m = LINK_RE.exec(scanText)) !== null) {
     const [, text, href] = m;
     const target = resolveLinkTarget(href, fromNotePath);
     if (target) {

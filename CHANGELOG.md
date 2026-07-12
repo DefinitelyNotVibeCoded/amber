@@ -2,6 +2,19 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.4.0 (2026-07-12)
+
+- Added vault templates: Blank, Second Brain, Team Knowledge Base, and
+  Research starting points, each explicit that the layout is a suggestion,
+  not a requirement (OKF only requires `type` in frontmatter). Available
+  from Settings, General, Create new vault.
+- Added a native folder picker in the Electron build (`electron/preload.js`,
+  `dialog.showOpenDialog`) for choosing where a new vault lives.
+- Fixed a link-extraction bug where markdown link syntax shown as a literal
+  code example (inside backticks) was parsed as a real link, creating
+  spurious backlinks. Fenced code blocks and inline code spans are now
+  excluded from link scanning.
+
 ## 0.3.0 (2026-07-12)
 
 - Added a Streamable HTTP transport (`mcp/http-server.ts`, `npm run mcp:http`)
