@@ -1,0 +1,73 @@
+{
+  "name": "amber",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Amber — an Obsidian-style local app for OKF (Open Knowledge Format) bundles.",
+  "author": "Amber",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "mcp": "tsx mcp/server.ts",
+    "electron": "electron electron/main.js",
+    "electron:dev": "concurrently -k -n NEXT,ELECTRON -c blue,yellow \"npm:dev\" \"wait-on http://localhost:3000 && cross-env AMBER_ELECTRON_DEV=1 electron electron/main.js\"",
+    "dist": "next build && electron-builder"
+  },
+  "dependencies": {
+    "next": "15.5.20",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "gray-matter": "^4.0.3",
+    "react-markdown": "^9.0.1",
+    "remark-gfm": "^4.0.0",
+    "d3-force": "^3.0.0",
+    "clsx": "^2.1.1",
+    "lucide-react": "^0.469.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.3",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@types/d3-force": "^3.0.10",
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.5.10",
+    "autoprefixer": "^10.4.20",
+    "tsx": "^4.23.0",
+    "electron": "^43.1.0",
+    "electron-builder": "^26.15.3",
+    "concurrently": "^9.1.2",
+    "wait-on": "^8.0.1",
+    "cross-env": "^7.0.3"
+  },
+  "build": {
+    "appId": "com.amber.okfvault",
+    "productName": "Amber",
+    "files": [
+      ".next/**/*",
+      "public/**/*",
+      "electron/**/*",
+      "src/lib/**/*",
+      "node_modules/**/*",
+      "package.json",
+      "next.config.js",
+      ".amber-config.json"
+    ],
+    "extraResources": [
+      { "from": "vault", "to": "vault" }
+    ],
+    "asar": false,
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}
