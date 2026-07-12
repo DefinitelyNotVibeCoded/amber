@@ -2,6 +2,19 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.3.0 — 2026-07-12
+
+- Added a Streamable HTTP transport (`mcp/http-server.ts`, `npm run mcp:http`)
+  alongside the existing stdio server, bound to loopback only, so OpenAI's
+  Agents SDK/Responses API and any other HTTP-capable MCP client can connect.
+- Settings → MCP Server now has a connector picker with ready-to-copy configs
+  for Claude Desktop, Claude Code, Cursor, Windsurf, Gemini CLI, VS Code
+  (stdio), plus OpenAI Agents SDK (Python/JS), OpenAI Responses API, and
+  ChatGPT connectors (HTTP, with a tunnel note since ChatGPT can't reach
+  localhost directly).
+- Factored MCP tool definitions into `mcp/tools.ts` so both transports share
+  one implementation.
+
 ## 0.2.0 — 2026-07-12
 
 - Added a built-in MCP server (`mcp/server.ts`) so Claude Desktop, Claude Code, or

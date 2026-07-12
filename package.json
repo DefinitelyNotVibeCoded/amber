@@ -1,6 +1,6 @@
 {
   "name": "amber",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "description": "Amber — an Obsidian-style local app for OKF (Open Knowledge Format) bundles.",
   "author": "Amber",
@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "next lint",
     "mcp": "tsx mcp/server.ts",
+    "mcp:http": "tsx mcp/http-server.ts",
     "electron": "electron electron/main.js",
     "electron:dev": "concurrently -k -n NEXT,ELECTRON -c blue,yellow \"npm:dev\" \"wait-on http://localhost:3000 && cross-env AMBER_ELECTRON_DEV=1 electron electron/main.js\"",
     "dist": "next build && electron-builder"
@@ -26,7 +27,8 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.469.0",
     "@modelcontextprotocol/sdk": "^1.29.0",
-    "zod": "^4.4.3"
+    "zod": "^4.4.3",
+    "express": "^5.2.1"
   },
   "devDependencies": {
     "typescript": "^5.7.3",
@@ -34,6 +36,7 @@
     "@types/react": "^19.0.7",
     "@types/react-dom": "^19.0.3",
     "@types/d3-force": "^3.0.10",
+    "@types/express": "^5.0.6",
     "tailwindcss": "^3.4.17",
     "postcss": "^8.5.10",
     "autoprefixer": "^10.4.20",

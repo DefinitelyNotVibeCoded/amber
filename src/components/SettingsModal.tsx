@@ -6,11 +6,23 @@ import Logo from "./Logo";
 
 type Tab = "general" | "mcp" | "about";
 
+interface StdioConnector {
+  label: string;
+  configPretty?: string;
+  filePath?: string;
+  command?: string;
+}
+interface HttpConnector {
+  label: string;
+  code?: string;
+  note?: string;
+}
 interface McpConfigResponse {
   projectRoot: string;
-  configPretty: string;
-  claudeDesktopConfigPath: string;
-  claudeCodeConfigHint: string;
+  httpUrl: string;
+  startHttpCommand: string;
+  stdio: Record<string, StdioConnector>;
+  http: Record<string, HttpConnector>;
 }
 
 const MCP_TOOLS = [
@@ -22,6 +34,9 @@ const MCP_TOOLS = [
   { name: "write_note", desc: "Overwrite an existing note's content" },
   { name: "create_note", desc: "Create a new OKF-conformant note" },
 ];
+
+const STDIO_ORDER = ["claudeDesktop", "claudeCode", "cursor", "windsurf", "geminiCli", "vscode"];
+const HTTP_ORDER = ["openaiAgentsPython", "openaiAgentsJs", "openaiResponses", "chatgpt"];
 
 function NavButton({
   active,
@@ -47,6 +62,43 @@ function NavButton({
   );
 }
 
+function ConnectorChip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`px-2.5 py-1 rounded-full text-[11.5px] font-medium border transition-colors ${
+        active
+          ? "border-[var(--accent)] bg-[var(--accent-soft)] text-[var(--accent-bright)]"
+          : "border-[var(--border-soft)] bg-[var(--bg-2)] text-[var(--text-1)] hover:text-[var(--text-0)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function CopyBlock({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="relative group">
+      <pre className="bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-[var(--radius-sm)] p-3 text-[11px] font-mono text-[var(--text-1)] overflow-x-auto whitespace-pre max-h-40">
+        {text}
+      </pre>
+      <button
+        onClick={async () => {
+          await navigator.clipboard.writeText(text);
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        }}
+        className="absolute top-2 right-2 flex items-center gap-1 text-[11px] px-1.5 py-0.5 rounded bg-[var(--bg-1)] border border-[var(--border-soft)] text-[var(--text-1)] hover:text-[var(--accent-bright)] transition-colors opacity-0 group-hover:opacity-100"
+      >
+        {copied ? <Check size={11} /> : <Copy size={11} />}
+        {copied ? "Copied" : "Copy"}
+      </button>
+    </div>
+  );
+}
+
 export default function SettingsModal({
   currentPath,
   onClose,
@@ -63,7 +115,8 @@ export default function SettingsModal({
 
   const [version, setVersion] = useState<{ name: string; version: string } | null>(null);
   const [mcpConfig, setMcpConfig] = useState<McpConfigResponse | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [connector, setConnector] = useState<string>("claudeDesktop");
+  const [transport, setTransport] = useState<"local" | "remote">("local");
 
   useEffect(() => {
     fetch("/api/version")
@@ -96,12 +149,8 @@ export default function SettingsModal({
     }
   }
 
-  async function copyConfig() {
-    if (!mcpConfig) return;
-    await navigator.clipboard.writeText(mcpConfig.configPretty);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
-  }
+  const stdioConnector = mcpConfig?.stdio[connector];
+  const httpConnector = mcpConfig?.http[connector];
 
   return (
     <div
@@ -109,7 +158,7 @@ export default function SettingsModal({
       onClick={onClose}
     >
       <div
-        className="bg-[var(--bg-1)] border border-[var(--border)] rounded-[var(--radius-lg)] w-[680px] h-[540px] shadow-[var(--shadow-lg)] animate-[popIn_0.15s_ease] flex overflow-hidden"
+        className="bg-[var(--bg-1)] border border-[var(--border)] rounded-[var(--radius-lg)] w-[760px] h-[600px] shadow-[var(--shadow-lg)] animate-[popIn_0.15s_ease] flex overflow-hidden"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="w-48 shrink-0 border-r border-[var(--border-soft)] bg-[var(--bg-2)]/40 p-3 flex flex-col gap-0.5">
@@ -166,10 +215,11 @@ export default function SettingsModal({
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
                     MCP server built in
                   </h3>
-                  <p className="text-[12.5px] text-[var(--text-2)] leading-relaxed max-w-[480px]">
-                    Amber ships an MCP server (<code className="text-[var(--accent-bright)]">mcp/server.ts</code>) that reads and
-                    writes this exact vault. Connect Claude Desktop or Claude Code to it and your notes stay in sync between the
-                    app and any chat — an AI agent can search, read, create, and edit notes on repeat across sessions.
+                  <p className="text-[12.5px] text-[var(--text-2)] leading-relaxed">
+                    Amber ships an MCP server that reads and writes this exact vault, over two transports: a local{" "}
+                    <code className="text-[var(--accent-bright)]">stdio</code> server for desktop tools, and a Streamable{" "}
+                    <code className="text-[var(--accent-bright)]">HTTP</code> server for OpenAI and anything else that needs a URL
+                    instead of a spawned process.
                   </p>
                 </div>
 
@@ -185,30 +235,78 @@ export default function SettingsModal({
                   </div>
                 </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1.5">
-                    <h4 className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-2)]">
-                      Claude Desktop config
-                    </h4>
-                    <button
-                      onClick={copyConfig}
-                      className="flex items-center gap-1 text-[11px] text-[var(--text-1)] hover:text-[var(--accent-bright)] transition-colors"
-                    >
-                      {copied ? <Check size={12} /> : <Copy size={12} />}
-                      {copied ? "Copied" : "Copy"}
-                    </button>
-                  </div>
-                  <pre className="bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-[var(--radius-sm)] p-3 text-[11px] font-mono text-[var(--text-1)] overflow-x-auto max-h-28">
-{mcpConfig?.configPretty || "Loading…"}
-                  </pre>
-                  <p className="text-[11px] text-[var(--text-2)] mt-1.5">
-                    Paste into <code className="text-[var(--text-1)]">{mcpConfig?.claudeDesktopConfigPath}</code>, or for Claude
-                    Code run:
-                  </p>
-                  <pre className="bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-[var(--radius-sm)] p-2 text-[11px] font-mono text-[var(--text-1)] overflow-x-auto mt-1">
-{mcpConfig?.claudeCodeConfigHint || "Loading…"}
-                  </pre>
+                <div className="flex items-center gap-1 bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-full p-0.5 w-fit">
+                  <button
+                    onClick={() => {
+                      setTransport("local");
+                      setConnector("claudeDesktop");
+                    }}
+                    className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                      transport === "local" ? "bg-[var(--accent-dim)] text-[#1b1a17]" : "text-[var(--text-1)]"
+                    }`}
+                  >
+                    Local (stdio)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setTransport("remote");
+                      setConnector("openaiAgentsPython");
+                    }}
+                    className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+                      transport === "remote" ? "bg-[var(--accent-dim)] text-[#1b1a17]" : "text-[var(--text-1)]"
+                    }`}
+                  >
+                    Remote (HTTP)
+                  </button>
                 </div>
+
+                <div className="flex flex-wrap gap-1.5">
+                  {(transport === "local" ? STDIO_ORDER : HTTP_ORDER).map((key) => {
+                    const label = transport === "local" ? mcpConfig?.stdio[key]?.label : mcpConfig?.http[key]?.label;
+                    return (
+                      <ConnectorChip
+                        key={key}
+                        active={connector === key}
+                        onClick={() => setConnector(key)}
+                        label={label || key}
+                      />
+                    );
+                  })}
+                </div>
+
+                {transport === "local" && stdioConnector && (
+                  <div className="flex flex-col gap-2">
+                    {stdioConnector.command ? (
+                      <>
+                        <p className="text-[12px] text-[var(--text-2)]">Run in a terminal:</p>
+                        <CopyBlock text={stdioConnector.command} />
+                      </>
+                    ) : (
+                      <>
+                        <CopyBlock text={stdioConnector.configPretty || ""} />
+                        <p className="text-[11px] text-[var(--text-2)]">
+                          Paste into <code className="text-[var(--text-1)]">{stdioConnector.filePath}</code>
+                        </p>
+                      </>
+                    )}
+                  </div>
+                )}
+
+                {transport === "remote" && httpConnector && (
+                  <div className="flex flex-col gap-2">
+                    <p className="text-[11px] text-[var(--text-2)]">
+                      Start the server once:{" "}
+                      <code className="text-[var(--accent-bright)]">{mcpConfig?.startHttpCommand}</code> — it listens on{" "}
+                      <code className="text-[var(--text-1)]">{mcpConfig?.httpUrl}</code> (loopback only).
+                    </p>
+                    {httpConnector.code && <CopyBlock text={httpConnector.code} />}
+                    {httpConnector.note && (
+                      <p className="text-[12px] text-[var(--text-1)] leading-relaxed bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-md p-3">
+                        {httpConnector.note}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
 
@@ -223,7 +321,7 @@ export default function SettingsModal({
                     </div>
                   </div>
                 </div>
-                <p className="text-[12.5px] text-[var(--text-1)] leading-relaxed max-w-[440px]">
+                <p className="text-[12.5px] text-[var(--text-1)] leading-relaxed max-w-[480px]">
                   An Obsidian-style local app for browsing, linking, and editing Open Knowledge Format (OKF) bundles — built for
                   notes that both you and AI agents maintain.
                 </p>
@@ -232,9 +330,9 @@ export default function SettingsModal({
                     What&rsquo;s new in this version
                   </h4>
                   <ul className="text-[12.5px] text-[var(--text-1)] flex flex-col gap-1 list-disc pl-4">
-                    <li>Built-in MCP server for Claude Desktop / Claude Code</li>
+                    <li>MCP server now speaks both stdio and Streamable HTTP</li>
+                    <li>Connector configs for Claude, Cursor, Windsurf, Gemini CLI, VS Code, and OpenAI</li>
                     <li>Packaged as an Electron desktop app</li>
-                    <li>Deeper Settings: General, MCP Server, About</li>
                   </ul>
                 </div>
                 <a
