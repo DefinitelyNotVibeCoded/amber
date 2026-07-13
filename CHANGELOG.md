@@ -2,6 +2,29 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.8.0 (2026-07-13)
+
+- Rebuilt the knowledge graph view: zoom, pan, drag nodes, fit-to-view, and
+  click a legend type to isolate it. Curved edges with halo'd labels replace
+  the old straight-line spiderweb, and force physics are tuned so clusters
+  actually spread out and stay readable.
+- Amber now ships as a real installable Windows app instead of a localhost
+  dev server: the production build runs on Electron's own bundled runtime
+  (no separate Node.js install required), packaged with electron-builder
+  into a standard NSIS installer.
+- Right-click any note in the sidebar for Open, Rename, Delete, and (inside
+  the desktop app) Reveal in folder. Rename and delete happen inline in the
+  tree, no dialogs.
+- Added a command palette: `Ctrl`/`Cmd`+`K` opens a fuzzy search over every
+  note plus quick actions (new note, switch view, open Settings, open Agent
+  activity). Arrow keys to navigate, Enter to jump.
+- The sidebar is now resizable by dragging its right edge; width persists
+  across restarts.
+- Switching notes or views now transitions with a short fade instead of
+  snapping instantly.
+- Hovering an internal link shows a preview popover (type, title,
+  description) before you click through.
+
 ## 0.7.0 (2026-07-13)
 
 - Added a Query view (Dataview-style, built in, no plugin, no API key):

@@ -60,6 +60,25 @@ export function deleteNote(root: string, notePath: string): void {
   fs.unlinkSync(abs);
 }
 
+/** Renames/moves a note within the vault. Does not rewrite links in other notes that pointed at the old path. */
+export function renameNote(root: string, fromPath: string, toPath: string): { path: string } {
+  const fromAbs = resolveInVault(root, fromPath);
+  if (!fs.existsSync(fromAbs)) {
+    throw new VaultOpError(`Note not found: ${fromPath}`, 404);
+  }
+  const toFilename = path.posix.basename(toPath);
+  if (toFilename === "index.md" || toFilename === "log.md") {
+    throw new VaultOpError("Filename is reserved", 400);
+  }
+  const toAbs = resolveInVault(root, toPath);
+  if (fs.existsSync(toAbs)) {
+    throw new VaultOpError("A note already exists at that path", 409);
+  }
+  fs.mkdirSync(path.dirname(toAbs), { recursive: true });
+  fs.renameSync(fromAbs, toAbs);
+  return { path: toPath };
+}
+
 export function createNote(root: string, params: CreateNoteParams): { path: string } {
   const { dir, type, title, description, resource, tags } = params;
   let filename = params.filename?.trim();

@@ -13,6 +13,7 @@ export default function Toolbar({
   onNewNote,
   onOpenSettings,
   onOpenActivityLog,
+  onOpenCommandPalette,
   hasActivity,
 }: {
   vaultRoot: string;
@@ -23,6 +24,7 @@ export default function Toolbar({
   onNewNote: () => void;
   onOpenSettings: () => void;
   onOpenActivityLog: () => void;
+  onOpenCommandPalette: () => void;
   hasActivity: boolean;
 }) {
   return (
@@ -43,6 +45,14 @@ export default function Toolbar({
           className="bg-transparent outline-none text-sm text-[var(--text-0)] placeholder:text-[var(--text-2)] w-full"
         />
       </div>
+
+      <button
+        onClick={onOpenCommandPalette}
+        className="flex items-center gap-1 px-2 py-1.5 rounded-full border border-[var(--border-soft)] text-[11px] font-medium text-[var(--text-2)] hover:text-[var(--text-0)] hover:border-[var(--border)] transition-colors"
+        title="Command palette"
+      >
+        <kbd className="font-sans">⌘K</kbd>
+      </button>
 
       <div className="flex items-center gap-0.5 ml-1 bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-full p-0.5">
         <button

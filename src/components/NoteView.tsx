@@ -30,7 +30,6 @@ export default function NoteView({
     return <div className="flex-1 flex items-center justify-center text-[var(--text-2)]">No note selected.</div>;
   }
 
-  const notePaths = new Set(vault.notes.map((n) => n.path));
   const backlinkNotes = vault.notes.filter((n) => note.backlinks.includes(n.path));
   const hasType = Boolean(note.frontmatter.type);
   const typeColor = colorForType(note.frontmatter.type, vault.types);
@@ -151,7 +150,7 @@ export default function NoteView({
               className="w-full h-[60vh] bg-[var(--bg-1)] border border-[var(--border-soft)] rounded-[var(--radius-md)] p-4 text-sm font-mono text-[var(--text-0)] outline-none focus:border-[var(--accent-dim)] resize-none leading-relaxed"
             />
           ) : (
-            <MarkdownBody body={note.body} links={note.links} notePaths={notePaths} onNavigate={onNavigate} />
+            <MarkdownBody body={note.body} links={note.links} vault={vault} onNavigate={onNavigate} />
           )}
 
           {!editing && backlinkNotes.length > 0 && (

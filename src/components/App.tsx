@@ -12,9 +12,12 @@ import NewNoteModal from "./NewNoteModal";
 import SettingsModal from "./SettingsModal";
 import ActivityLogPanel from "./ActivityLogPanel";
 import QueryView from "./QueryView";
+import CommandPalette from "./CommandPalette";
 
 const THEME_PRESET_KEY = "amber-theme-preset";
 const THEME_ACCENT_KEY = "amber-theme-accent";
+const SIDEBAR_WIDTH_KEY = "amber-sidebar-width";
+const DEFAULT_SIDEBAR_WIDTH = 288;
 
 export type ViewMode = "note" | "graph" | "query";
 
@@ -31,15 +34,24 @@ export default function App() {
   const [showNewNote, setShowNewNote] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [hasActivity, setHasActivity] = useState(false);
   const [themePreset, setThemePresetState] = useState("amber");
   const [accentOverride, setAccentOverrideState] = useState<string | null>(null);
+  const [sidebarWidth, setSidebarWidthState] = useState(DEFAULT_SIDEBAR_WIDTH);
 
   useEffect(() => {
     const savedPreset = localStorage.getItem(THEME_PRESET_KEY);
     const savedAccent = localStorage.getItem(THEME_ACCENT_KEY);
+    const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
     if (savedPreset) setThemePresetState(savedPreset);
     if (savedAccent) setAccentOverrideState(savedAccent);
+    if (savedWidth) setSidebarWidthState(Number(savedWidth));
+  }, []);
+
+  const setSidebarWidth = useCallback((width: number) => {
+    setSidebarWidthState(width);
+    localStorage.setItem(SIDEBAR_WIDTH_KEY, String(width));
   }, []);
 
   useEffect(() => {
@@ -102,6 +114,29 @@ export default function App() {
     setView("note");
   }, []);
 
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setShowCommandPalette((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const handleSidebarChanged = useCallback(
+    async (opts?: { deletedPath?: string; renamedTo?: string }) => {
+      await reload();
+      if (opts?.renamedTo) {
+        setSelectedPath(opts.renamedTo);
+      } else if (opts?.deletedPath && opts.deletedPath === selectedPath) {
+        setSelectedPath(null);
+      }
+    },
+    [reload, selectedPath]
+  );
+
   if (loading) {
     return (
       <div className="h-screen w-screen flex flex-col items-center justify-center gap-3 bg-[var(--bg-0)]">
@@ -131,6 +166,7 @@ export default function App() {
         onNewNote={() => setShowNewNote(true)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenActivityLog={() => setShowActivityLog(true)}
+        onOpenCommandPalette={() => setShowCommandPalette(true)}
         hasActivity={hasActivity}
       />
       <div className="flex flex-1 min-h-0">
@@ -143,21 +179,23 @@ export default function App() {
           tagFilter={tagFilter}
           onTypeFilter={setTypeFilter}
           onTagFilter={setTagFilter}
+          onChanged={handleSidebarChanged}
+          width={sidebarWidth}
+          onResize={setSidebarWidth}
         />
-        <main className="flex-1 min-w-0 flex flex-col">
-          {view === "graph" ? (
-            <GraphView vault={vault} onSelect={handleSelect} focusPath={selectedPath} />
-          ) : view === "query" ? (
-            <QueryView vault={vault} onSelect={handleSelect} />
-          ) : (
-            <NoteView
-              key={selectedNote?.path}
-              vault={vault}
-              note={selectedNote}
-              onNavigate={handleSelect}
-              onSaved={reload}
-            />
-          )}
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
+          <div
+            key={view === "note" ? `note-${selectedNote?.path}` : view}
+            className="flex-1 min-h-0 flex flex-col animate-[contentIn_0.16s_ease]"
+          >
+            {view === "graph" ? (
+              <GraphView vault={vault} onSelect={handleSelect} focusPath={selectedPath} />
+            ) : view === "query" ? (
+              <QueryView vault={vault} onSelect={handleSelect} />
+            ) : (
+              <NoteView vault={vault} note={selectedNote} onNavigate={handleSelect} onSaved={reload} />
+            )}
+          </div>
         </main>
       </div>
 
@@ -199,6 +237,18 @@ export default function App() {
             handleSelect(path);
           }}
           onReverted={reload}
+        />
+      )}
+
+      {showCommandPalette && (
+        <CommandPalette
+          vault={vault}
+          onClose={() => setShowCommandPalette(false)}
+          onSelect={handleSelect}
+          onSetView={setView}
+          onNewNote={() => setShowNewNote(true)}
+          onOpenSettings={() => setShowSettings(true)}
+          onOpenActivityLog={() => setShowActivityLog(true)}
         />
       )}
     </div>

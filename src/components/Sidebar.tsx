@@ -1,9 +1,11 @@
 "use client";
 
+import { useCallback, useRef, useState } from "react";
 import type { VaultData } from "@/lib/types";
-import FileTree from "./FileTree";
+import FileTree, { RowActions } from "./FileTree";
+import ContextMenu, { ContextMenuItem } from "./ContextMenu";
 import { colorForType, isReservedFilename } from "@/lib/okfClient";
-import { X } from "lucide-react";
+import { X, Pencil, Trash2, FolderOpen, FileSearch } from "lucide-react";
 
 export default function Sidebar({
   vault,
@@ -14,6 +16,9 @@ export default function Sidebar({
   tagFilter,
   onTypeFilter,
   onTagFilter,
+  onChanged,
+  width,
+  onResize,
 }: {
   vault: VaultData;
   selectedPath: string | null;
@@ -23,9 +28,158 @@ export default function Sidebar({
   tagFilter: string | null;
   onTypeFilter: (t: string | null) => void;
   onTagFilter: (t: string | null) => void;
+  onChanged: (opts?: { deletedPath?: string; renamedTo?: string }) => void;
+  width: number;
+  onResize: (width: number) => void;
 }) {
+  const asideRef = useRef<HTMLElement>(null);
+  const [resizing, setResizing] = useState(false);
+
+  const startResize = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startWidth = asideRef.current?.getBoundingClientRect().width ?? width;
+      setResizing(true);
+
+      const onMove = (moveEvent: MouseEvent) => {
+        const next = Math.min(480, Math.max(220, startWidth + (moveEvent.clientX - startX)));
+        if (asideRef.current) asideRef.current.style.width = `${next}px`;
+      };
+      const onUp = () => {
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+        setResizing(false);
+        const finalWidth = asideRef.current?.getBoundingClientRect().width ?? width;
+        onResize(Math.round(finalWidth));
+      };
+      window.addEventListener("mousemove", onMove);
+      window.addEventListener("mouseup", onUp);
+    },
+    [width, onResize]
+  );
   const query = search.trim().toLowerCase();
   const filtering = Boolean(query || typeFilter || tagFilter);
+
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; path: string } | null>(null);
+  const [renamingPath, setRenamingPath] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [deletingPath, setDeletingPath] = useState<string | null>(null);
+
+  const startRename = useCallback(
+    (path: string) => {
+      const note = vault.notes.find((n) => n.path === path);
+      const base = (note?.filename || path.split("/").pop() || "").replace(/\.md$/, "");
+      setRenamingPath(path);
+      setRenameValue(base);
+      setDeletingPath(null);
+    },
+    [vault.notes]
+  );
+
+  const commitRename = useCallback(async () => {
+    if (!renamingPath) return;
+    const trimmed = renameValue.trim();
+    if (!trimmed) {
+      setRenamingPath(null);
+      return;
+    }
+    const dir = renamingPath.slice(0, renamingPath.lastIndexOf("/"));
+    const toPath = `${dir}/${trimmed}.md`;
+    if (toPath === renamingPath) {
+      setRenamingPath(null);
+      return;
+    }
+    try {
+      const res = await fetch("/api/note/rename", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromPath: renamingPath, toPath }),
+      });
+      if (res.ok) {
+        setRenamingPath(null);
+        onChanged({ renamedTo: toPath });
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Rename failed.");
+      }
+    } catch {
+      alert("Rename failed.");
+    }
+  }, [renamingPath, renameValue, onChanged]);
+
+  const commitDelete = useCallback(
+    async (path: string) => {
+      try {
+        const res = await fetch("/api/note/delete", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ path }),
+        });
+        if (res.ok) {
+          setDeletingPath(null);
+          onChanged({ deletedPath: path });
+        } else {
+          const data = await res.json().catch(() => ({}));
+          alert(data.error || "Delete failed.");
+        }
+      } catch {
+        alert("Delete failed.");
+      }
+    },
+    [onChanged]
+  );
+
+  const openContextMenu = useCallback((e: React.MouseEvent, path: string) => {
+    e.preventDefault();
+    if (isReservedFilename(path.split("/").pop() || "")) return;
+    setContextMenu({ x: e.clientX, y: e.clientY, path });
+  }, []);
+
+  const rowActions: RowActions = {
+    onContextMenu: openContextMenu,
+    renamingPath,
+    renameValue,
+    onRenameValueChange: setRenameValue,
+    onRenameCommit: commitRename,
+    onRenameCancel: () => setRenamingPath(null),
+    deletingPath,
+    onDeleteCommit: (path) => commitDelete(path),
+    onDeleteCancel: () => setDeletingPath(null),
+  };
+
+  const menuItems: ContextMenuItem[] = contextMenu
+    ? [
+        {
+          label: "Open",
+          icon: <FileSearch size={13} />,
+          onClick: () => onSelect(contextMenu.path),
+        },
+        {
+          label: "Rename",
+          icon: <Pencil size={13} />,
+          onClick: () => startRename(contextMenu.path),
+        },
+        ...(typeof window !== "undefined" && window.amber
+          ? [
+              {
+                label: "Reveal in folder",
+                icon: <FolderOpen size={13} />,
+                onClick: () => {
+                  const abs = `${vault.root}${contextMenu.path}`.replace(/\//g, "\\");
+                  window.amber?.revealInFolder(abs);
+                },
+              },
+            ]
+          : []),
+        {
+          label: "Delete",
+          icon: <Trash2 size={13} />,
+          danger: true,
+          onClick: () => setDeletingPath(contextMenu.path),
+        },
+      ]
+    : [];
 
   const filteredNotes = vault.notes.filter((n) => {
     if (typeFilter && n.frontmatter.type !== typeFilter) return false;
@@ -46,7 +200,11 @@ export default function Sidebar({
   });
 
   return (
-    <aside className="w-72 shrink-0 border-r border-[var(--border)] bg-[var(--bg-1)] flex flex-col min-h-0">
+    <aside
+      ref={asideRef}
+      style={{ width }}
+      className="relative shrink-0 border-r border-[var(--border)] bg-[var(--bg-1)] flex flex-col min-h-0"
+    >
       <div className="p-2.5 border-b border-[var(--border-soft)] flex flex-wrap gap-1.5">
         {vault.types.map((t) => {
           const active = typeFilter === t;
@@ -112,10 +270,55 @@ export default function Sidebar({
               .filter((n) => !isReservedFilename(n.filename))
               .map((n) => {
                 const active = selectedPath === n.path;
+                const isRenaming = renamingPath === n.path;
+                const isDeleting = deletingPath === n.path;
+
+                if (isRenaming) {
+                  return (
+                    <div key={n.path} className="flex items-center gap-2 w-full px-2.5 py-1 rounded-md text-sm">
+                      <input
+                        autoFocus
+                        value={renameValue}
+                        onChange={(e) => setRenameValue(e.target.value)}
+                        onFocus={(e) => e.currentTarget.select()}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") commitRename();
+                          if (e.key === "Escape") setRenamingPath(null);
+                        }}
+                        className="flex-1 min-w-0 bg-[var(--bg-2)] border border-[var(--accent)] rounded px-1.5 py-0.5 text-sm text-[var(--text-0)] outline-none"
+                      />
+                    </div>
+                  );
+                }
+
+                if (isDeleting) {
+                  return (
+                    <div
+                      key={n.path}
+                      className="flex items-center gap-2 w-full px-2.5 py-1 rounded-md text-sm bg-[var(--danger)]/10"
+                    >
+                      <span className="flex-1 min-w-0 truncate text-[var(--danger)]">Delete &ldquo;{n.title}&rdquo;?</span>
+                      <button
+                        onClick={() => commitDelete(n.path)}
+                        className="shrink-0 px-1.5 py-0.5 rounded text-[11px] font-medium bg-[var(--danger)] text-white hover:opacity-90"
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => setDeletingPath(null)}
+                        className="shrink-0 p-0.5 rounded hover:bg-[var(--bg-hover)] text-[var(--text-2)]"
+                      >
+                        <X size={13} />
+                      </button>
+                    </div>
+                  );
+                }
+
                 return (
                   <button
                     key={n.path}
                     onClick={() => onSelect(n.path)}
+                    onContextMenu={(e) => openContextMenu(e, n.path)}
                     className={`flex items-center gap-2 w-full text-left px-2.5 py-1.5 rounded-md text-sm truncate transition-colors ${
                       active
                         ? "bg-[var(--accent-soft)] text-[var(--accent-bright)] font-medium"
@@ -132,13 +335,28 @@ export default function Sidebar({
               })}
           </div>
         ) : (
-          <FileTree tree={vault.tree} vault={vault} selectedPath={selectedPath} onSelect={onSelect} />
+          <FileTree tree={vault.tree} vault={vault} selectedPath={selectedPath} onSelect={onSelect} actions={rowActions} />
         )}
       </div>
 
       <div className="p-2.5 border-t border-[var(--border-soft)] text-[11px] text-[var(--text-2)] flex justify-between">
         <span>{vault.notes.filter((n) => !isReservedFilename(n.filename)).length} concepts</span>
         <span>{vault.types.length} types</span>
+      </div>
+
+      {contextMenu && (
+        <ContextMenu x={contextMenu.x} y={contextMenu.y} items={menuItems} onClose={() => setContextMenu(null)} />
+      )}
+
+      <div
+        onMouseDown={startResize}
+        className="absolute top-0 -right-1.5 bottom-0 w-3 cursor-col-resize z-10 group"
+      >
+        <div
+          className={`w-px h-full mx-auto transition-colors ${
+            resizing ? "bg-[var(--accent)]" : "bg-transparent group-hover:bg-[var(--accent-dim)]"
+          }`}
+        />
       </div>
     </aside>
   );

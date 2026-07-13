@@ -1,6 +1,6 @@
 {
   "name": "amber",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "description": "Amber: an Obsidian-style local app for OKF (Open Knowledge Format) bundles.",
   "author": "Amber",
@@ -14,7 +14,7 @@
     "mcp:http": "tsx mcp/http-server.ts",
     "electron": "electron electron/main.js",
     "electron:dev": "concurrently -k -n NEXT,ELECTRON -c blue,yellow \"npm:dev\" \"wait-on http://localhost:3000 && cross-env AMBER_ELECTRON_DEV=1 electron electron/main.js\"",
-    "dist": "next build && electron-builder"
+    "dist": "next build && node scripts/prepare-standalone.js && electron-builder"
   },
   "dependencies": {
     "next": "15.5.20",
@@ -51,17 +51,12 @@
     "appId": "com.amber.okfvault",
     "productName": "Amber",
     "files": [
-      ".next/**/*",
-      "public/**/*",
+      ".next/standalone/**/*",
       "electron/**/*",
-      "src/lib/**/*",
-      "node_modules/**/*",
-      "package.json",
-      "next.config.js",
-      ".amber-config.json"
+      "build/icon.png"
     ],
     "extraResources": [
-      { "from": "vault", "to": "vault" }
+      { "from": "vault", "to": "app/vault" }
     ],
     "asar": false,
     "win": {
@@ -70,7 +65,8 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "perMachine": false
     }
   }
 }

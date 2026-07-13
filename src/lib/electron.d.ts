@@ -5,6 +5,7 @@ declare global {
     amber?: {
       isElectron: true;
       pickFolder: () => Promise<string | null>;
+      revealInFolder: (absPath: string) => Promise<void>;
     };
   }
 }

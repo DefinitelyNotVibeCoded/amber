@@ -33,11 +33,19 @@ function waitForServer(url, timeoutMs = 45000) {
 
 function startProductionServer() {
   const appRoot = app.isPackaged ? path.join(process.resourcesPath, "app") : path.join(__dirname, "..");
-  const nextBin = path.join(appRoot, "node_modules", ".bin", process.platform === "win32" ? "next.cmd" : "next");
-  nextProcess = spawn(nextBin, ["start", "-p", String(PORT)], {
+  const serverEntry = path.join(appRoot, ".next", "standalone", "server.js");
+  // Run the bundled Node.js standalone server using Electron's own executable
+  // in "run as Node" mode, so the packaged app never depends on the user
+  // having Node.js installed.
+  nextProcess = spawn(process.execPath, [serverEntry], {
     cwd: appRoot,
     stdio: "inherit",
-    env: { ...process.env },
+    env: {
+      ...process.env,
+      ELECTRON_RUN_AS_NODE: "1",
+      PORT: String(PORT),
+      HOSTNAME: "127.0.0.1",
+    },
   });
   nextProcess.on("exit", (code) => {
     if (code !== 0 && mainWindow) {
@@ -128,6 +136,12 @@ ipcMain.handle("pick-folder", async () => {
   });
   if (result.canceled || result.filePaths.length === 0) return null;
   return result.filePaths[0];
+});
+
+ipcMain.handle("reveal-in-folder", async (_event, absPath) => {
+  if (typeof absPath === "string" && absPath.length > 0) {
+    shell.showItemInFolder(absPath);
+  }
 });
 
 app.whenReady().then(async () => {

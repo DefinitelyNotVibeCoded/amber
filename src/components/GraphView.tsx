@@ -83,13 +83,14 @@ export default function GraphView({
     }
     const xs = nodeList.map((n) => n.x);
     const ys = nodeList.map((n) => n.y);
+    // Extra padding on the right accounts for labels extending past each node.
     const minX = Math.min(...xs) - 40;
-    const maxX = Math.max(...xs) + 40;
+    const maxX = Math.max(...xs) + 130;
     const minY = Math.min(...ys) - 40;
     const maxY = Math.max(...ys) + 40;
     const spanX = Math.max(maxX - minX, 1);
     const spanY = Math.max(maxY - minY, 1);
-    const k = clamp(Math.min(width / spanX, height / spanY), MIN_ZOOM, 1.5);
+    const k = clamp(Math.min(width / spanX, height / spanY) * 0.92, MIN_ZOOM, MAX_ZOOM);
     const cx = (minX + maxX) / 2;
     const cy = (minY + maxY) / 2;
     setView({ x: width / 2 - cx * k, y: height / 2 - cy * k, k });
@@ -118,15 +119,15 @@ export default function GraphView({
         "link",
         forceLink(simLinks as any)
           .id((d: any) => d.id)
-          .distance(110)
-          .strength(0.45)
+          .distance(170)
+          .strength(0.22)
       )
-      .force("charge", forceManyBody().strength(-260))
+      .force("charge", forceManyBody().strength(-520))
       .force("center", forceCenter(0, 0))
-      .force("collide", forceCollide(32))
+      .force("collide", forceCollide(62))
       .stop();
 
-    for (let i = 0; i < 300; i++) sim.tick();
+    for (let i = 0; i < 400; i++) sim.tick();
 
     const finalNodes = simNodes.map((n) => ({ id: n.id, title: n.title, type: n.type, x: n.x, y: n.y }));
     // d3-force mutates link.source/target from id strings into node object references while ticking; normalize back to ids.
@@ -261,22 +262,26 @@ export default function GraphView({
           </filter>
         </defs>
         <g transform={`translate(${view.x},${view.y}) scale(${view.k})`}>
-          <g>
+          <g fill="none">
             {links.map((l, i) => {
               const s = nodeById.get(l.source);
               const t = nodeById.get(l.target);
               if (!s || !t) return null;
               const dim = isDimmed(s) || isDimmed(t);
+              const dx = t.x - s.x;
+              const dy = t.y - s.y;
+              const dist = Math.hypot(dx, dy) || 1;
+              // Gentle arc so crossing edges stay visually distinguishable instead of a flat spiderweb.
+              const bow = Math.min(dist * 0.14, 26) * (l.source < l.target ? 1 : -1);
+              const mx = (s.x + t.x) / 2 - (dy / dist) * bow;
+              const my = (s.y + t.y) / 2 + (dx / dist) * bow;
               return (
-                <line
+                <path
                   key={i}
-                  x1={s.x}
-                  y1={s.y}
-                  x2={t.x}
-                  y2={t.y}
+                  d={`M ${s.x} ${s.y} Q ${mx} ${my} ${t.x} ${t.y}`}
                   stroke={dim ? "var(--text-2)" : "var(--accent-dim)"}
-                  strokeOpacity={dim ? 0.35 : 0.85}
-                  strokeWidth={1 / view.k}
+                  strokeOpacity={dim ? 0.3 : 0.8}
+                  strokeWidth={1.3 / view.k}
                   style={{ transition: "stroke-opacity 0.2s ease" }}
                 />
               );
@@ -287,7 +292,7 @@ export default function GraphView({
               const dim = isDimmed(n);
               const isFocus = n.id === focusPath;
               const isHovered = hovered === n.id;
-              const r = (isFocus ? 8 : isHovered ? 7.5 : 6) / view.k;
+              const r = (isFocus ? 9.5 : isHovered ? 9 : 7) / view.k;
               return (
                 <g
                   key={n.id}
@@ -312,12 +317,20 @@ export default function GraphView({
                     style={{ transition: "r 0.15s ease" }}
                   />
                   <text
-                    x={11 / view.k}
+                    x={13 / view.k}
                     y={4 / view.k}
-                    fontSize={11.5 / view.k}
-                    fontWeight={isFocus || isHovered ? 600 : 400}
+                    fontSize={12 / view.k}
+                    fontWeight={isFocus || isHovered ? 600 : 500}
                     fill={isFocus || isHovered ? "var(--text-0)" : "var(--text-1)"}
-                    style={{ pointerEvents: "none", userSelect: "none", transition: "fill 0.15s ease" }}
+                    stroke="var(--bg-0)"
+                    strokeWidth={3 / view.k}
+                    strokeOpacity={0.85}
+                    style={{
+                      pointerEvents: "none",
+                      userSelect: "none",
+                      transition: "fill 0.15s ease",
+                      paintOrder: "stroke",
+                    }}
                   >
                     {n.title}
                   </text>
