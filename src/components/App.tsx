@@ -10,6 +10,7 @@ import GraphView from "./GraphView";
 import Toolbar from "./Toolbar";
 import NewNoteModal from "./NewNoteModal";
 import SettingsModal from "./SettingsModal";
+import ActivityLogPanel from "./ActivityLogPanel";
 
 const THEME_PRESET_KEY = "amber-theme-preset";
 const THEME_ACCENT_KEY = "amber-theme-accent";
@@ -28,6 +29,8 @@ export default function App() {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [showNewNote, setShowNewNote] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showActivityLog, setShowActivityLog] = useState(false);
+  const [hasActivity, setHasActivity] = useState(false);
   const [themePreset, setThemePresetState] = useState("amber");
   const [accentOverride, setAccentOverrideState] = useState<string | null>(null);
 
@@ -75,6 +78,13 @@ export default function App() {
   }, [reload]);
 
   useEffect(() => {
+    fetch("/api/activity-log")
+      .then((r) => r.json())
+      .then((d) => setHasActivity((d.entries || []).length > 0))
+      .catch(() => {});
+  }, [vault]);
+
+  useEffect(() => {
     if (!selectedPath && vault && vault.notes.length > 0) {
       const idx = vault.notes.find((n) => n.path === "/index.md");
       setSelectedPath(idx ? idx.path : vault.notes[0].path);
@@ -119,6 +129,8 @@ export default function App() {
         onSearch={setSearch}
         onNewNote={() => setShowNewNote(true)}
         onOpenSettings={() => setShowSettings(true)}
+        onOpenActivityLog={() => setShowActivityLog(true)}
+        hasActivity={hasActivity}
       />
       <div className="flex flex-1 min-h-0">
         <Sidebar
@@ -172,6 +184,18 @@ export default function App() {
             setSelectedPath(null);
             await reload();
           }}
+        />
+      )}
+
+      {showActivityLog && (
+        <ActivityLogPanel
+          vault={vault}
+          onClose={() => setShowActivityLog(false)}
+          onNavigate={(path) => {
+            setShowActivityLog(false);
+            handleSelect(path);
+          }}
+          onReverted={reload}
         />
       )}
     </div>

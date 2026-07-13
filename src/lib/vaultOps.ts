@@ -44,6 +44,22 @@ export function writeNoteRaw(root: string, notePath: string, content: string): v
   fs.writeFileSync(abs, content, "utf-8");
 }
 
+export function noteExists(root: string, notePath: string): boolean {
+  try {
+    return fs.existsSync(resolveInVault(root, notePath));
+  } catch {
+    return false;
+  }
+}
+
+export function deleteNote(root: string, notePath: string): void {
+  const abs = resolveInVault(root, notePath);
+  if (!fs.existsSync(abs)) {
+    throw new VaultOpError(`Note not found: ${notePath}`, 404);
+  }
+  fs.unlinkSync(abs);
+}
+
 export function createNote(root: string, params: CreateNoteParams): { path: string } {
   const { dir, type, title, description, resource, tags } = params;
   let filename = params.filename?.trim();

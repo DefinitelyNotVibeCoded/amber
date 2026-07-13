@@ -1,6 +1,6 @@
 "use client";
 
-import { Network, FileText, Plus, Settings, Search } from "lucide-react";
+import { Network, FileText, Plus, Settings, Search, History } from "lucide-react";
 import type { ViewMode } from "./App";
 import Logo from "./Logo";
 
@@ -12,6 +12,8 @@ export default function Toolbar({
   onSearch,
   onNewNote,
   onOpenSettings,
+  onOpenActivityLog,
+  hasActivity,
 }: {
   vaultRoot: string;
   view: ViewMode;
@@ -20,6 +22,8 @@ export default function Toolbar({
   onSearch: (s: string) => void;
   onNewNote: () => void;
   onOpenSettings: () => void;
+  onOpenActivityLog: () => void;
+  hasActivity: boolean;
 }) {
   return (
     <div className="h-14 shrink-0 border-b border-[var(--border)] bg-[var(--bg-1)]/95 backdrop-blur-sm flex items-center gap-3 px-4">
@@ -79,6 +83,16 @@ export default function Toolbar({
         className="px-3.5 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[var(--accent-contrast)] shadow-[0_2px_8px_-2px_rgba(var(--accent-rgb),0.5)]"
       >
         <Plus size={14} /> New note
+      </button>
+      <button
+        onClick={onOpenActivityLog}
+        className="relative p-2 rounded-full text-[var(--text-1)] hover:bg-[var(--bg-2)] hover:text-[var(--text-0)] transition-colors"
+        title="Agent activity"
+      >
+        <History size={16} />
+        {hasActivity && (
+          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
+        )}
       </button>
       <button
         onClick={onOpenSettings}

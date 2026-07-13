@@ -37,7 +37,7 @@ const MCP_TOOLS = [
   { name: "create_note", desc: "Create a new OKF-conformant note" },
 ];
 
-const STDIO_ORDER = ["claudeDesktop", "claudeCode", "cursor", "windsurf", "geminiCli", "vscode"];
+const STDIO_ORDER = ["claudeDesktop", "claudeCode", "cursor", "windsurf", "geminiCli", "vscode", "openclaw", "hermes"];
 const HTTP_ORDER = ["openaiAgentsPython", "openaiAgentsJs", "openaiResponses", "chatgpt"];
 
 function NavButton({
@@ -417,9 +417,9 @@ export default function SettingsModal({
                     What&rsquo;s new in this version
                   </h4>
                   <ul className="text-[12.5px] text-[var(--text-1)] flex flex-col gap-1 list-disc pl-4">
-                    <li>Customizable theme: 5 presets plus a custom accent color</li>
-                    <li>Interactive knowledge graph: zoom, pan, drag nodes, filter by type</li>
-                    <li>Vault templates and an MCP server for Claude, Cursor, OpenAI, and more</li>
+                    <li>Agent Activity Log: review and revert every AI-made edit, with diffs</li>
+                    <li>OpenClaw and Hermes Agent added to the MCP connector list</li>
+                    <li>Customizable theme and an interactive knowledge graph</li>
                   </ul>
                 </div>
                 <a

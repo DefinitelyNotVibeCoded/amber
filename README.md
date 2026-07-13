@@ -29,6 +29,7 @@ tooling, not just its own.
 - **New note**: scaffolds a conformant OKF file (`type` required, everything else recommended)
 - **Desktop app**: packaged with Electron, its own window, its own taskbar icon, not a browser tab
 - **Built-in MCP server**: read *and* write the vault from Claude, Cursor, OpenAI, and more (see below)
+- **Agent Activity Log**: every note an MCP client creates or edits is logged separately from your own edits, with a line diff and one-click revert
 
 ## Quick start
 
@@ -59,16 +60,25 @@ editing in the app or chatting with an agent:
 
 | Transport | For | Command |
 | --- | --- | --- |
-| stdio | Claude Desktop, Claude Code, Cursor, Windsurf, Gemini CLI, VS Code | `npm run mcp` |
+| stdio | Claude Desktop, Claude Code, Cursor, Windsurf, Gemini CLI, VS Code, OpenClaw, Hermes Agent | `npm run mcp` |
 | Streamable HTTP (loopback-only) | OpenAI Agents SDK, Responses API, ChatGPT connectors\* | `npm run mcp:http` |
 
 \* ChatGPT's connector picker only accepts a public HTTPS URL. Tunnel the
 local HTTP server (`npx mcp-remote http://127.0.0.1:8420/mcp`, or a Cloudflare
 Tunnel) to use it there.
 
-Every client's exact config (JSON snippets, file paths, and copy-paste code
+Every client's exact config (JSON or YAML, file paths, and copy-paste code
 for the OpenAI SDKs) is generated live in **Settings → MCP Server** with real
 absolute paths for your machine.
+
+### Agent Activity Log
+
+Giving an AI agent write access to your notes only feels safe if you can see
+what it did. Every `write_note` and `create_note` call, from any connected
+client, is logged separately from your own in-app edits: what changed, when,
+and by which tool, with a line-level diff and a one-click revert. Open it
+from the history icon in the toolbar, it shows a dot when there's something
+to review.
 
 ## Project structure
 
@@ -81,9 +91,9 @@ amber/
     http-server.ts       Streamable HTTP entry point (loopback only)
   electron/main.js      desktop window shell
   src/
-    lib/                 OKF parsing, vault read/write, config
+    lib/                 OKF parsing, vault read/write, config, activity log, diff
     app/                  Next.js pages + API routes
-    components/           sidebar, note view, graph view, settings, editor
+    components/           sidebar, note view, graph view, settings, activity log, editor
 ```
 
 ## Tech

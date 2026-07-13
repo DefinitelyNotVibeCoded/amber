@@ -2,6 +2,22 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.6.0 (2026-07-13)
+
+- Added an Agent Activity Log: every note an MCP client creates or edits is
+  logged separately from your own in-app edits, with a line-level diff and
+  one-click revert. Opens from the new history icon in the toolbar, which
+  shows a dot when there's activity to review.
+- Log entries are stored per-vault at `.amber/activity-log.json` (git-
+  ignored), capped at the last 300 entries.
+- Added OpenClaw (`~/.openclaw/openclaw.json`) and Hermes Agent
+  (`~/.hermes/config.yaml`, YAML) to the MCP connector list in Settings,
+  each with its own real config format.
+- Fixed a real bug found while testing: the activity log's row toggle was a
+  `<button>` containing nested `<button>`s (revert, note title), which is
+  invalid HTML and caused a hydration/compile error. Row toggle is now a
+  `div[role=button]` with keyboard support, buttons stay siblings.
+
 ## 0.5.0 (2026-07-12)
 
 - Added theme customization: 5 presets (Amber, Slate, Violet, Forest, Light)

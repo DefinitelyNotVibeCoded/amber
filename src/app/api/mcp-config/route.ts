@@ -19,6 +19,13 @@ export async function GET() {
   const windsurfConfig = { mcpServers: { amber: stdioServerBlock } };
   const geminiCliConfig = { mcpServers: { amber: stdioServerBlock } };
   const vscodeConfig = { servers: { amber: { type: "stdio", ...stdioServerBlock } } };
+  const openclawConfig = { mcp: { servers: { amber: stdioServerBlock } } };
+  const hermesYaml = [
+    "mcp_servers:",
+    "  amber:",
+    `    command: ${JSON.stringify("node")}`,
+    `    args: [${JSON.stringify(tsxCli)}, ${JSON.stringify(stdioEntry)}]`,
+  ].join("\n");
 
   const openaiAgentsPython = [
     "from agents import Agent, Runner",
@@ -89,6 +96,16 @@ export async function GET() {
         label: "VS Code (Copilot)",
         configPretty: JSON.stringify(vscodeConfig, null, 2),
         filePath: "<project>/.vscode/mcp.json",
+      },
+      openclaw: {
+        label: "OpenClaw",
+        configPretty: JSON.stringify(openclawConfig, null, 2),
+        filePath: process.platform === "win32" ? "%USERPROFILE%\\.openclaw\\openclaw.json" : "~/.openclaw/openclaw.json",
+      },
+      hermes: {
+        label: "Hermes Agent",
+        configPretty: hermesYaml,
+        filePath: process.platform === "win32" ? "%USERPROFILE%\\.hermes\\config.yaml" : "~/.hermes/config.yaml",
       },
     },
     http: {

@@ -4,6 +4,7 @@ import { getVaultPath } from "../src/lib/config";
 import { loadVault } from "../src/lib/okf";
 import { isReservedFilename } from "../src/lib/okfClient";
 import { readNoteRaw, writeNoteRaw, createNote, VaultOpError } from "../src/lib/vaultOps";
+import { appendActivityLogEntry } from "../src/lib/activityLog";
 
 function errorResult(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true as const };
@@ -155,8 +156,16 @@ export function createAmberServer(): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     },
     async ({ path, content }) => {
+      const root = getVaultPath();
       try {
-        writeNoteRaw(getVaultPath(), path, content);
+        let before: string | null = null;
+        try {
+          before = readNoteRaw(root, path);
+        } catch {
+          before = null;
+        }
+        writeNoteRaw(root, path, content);
+        appendActivityLogEntry(root, { tool: "write_note", path, before, after: content });
         return { content: [{ type: "text", text: `Saved ${path}` }] };
       } catch (e) {
         return errorResult(e instanceof Error ? e.message : String(e));
@@ -184,8 +193,11 @@ export function createAmberServer(): McpServer {
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
     },
     async (params) => {
+      const root = getVaultPath();
       try {
-        const result = createNote(getVaultPath(), params);
+        const result = createNote(root, params);
+        const after = readNoteRaw(root, result.path);
+        appendActivityLogEntry(root, { tool: "create_note", path: result.path, before: null, after });
         return { content: [{ type: "text", text: `Created ${result.path}` }] };
       } catch (e) {
         const message = e instanceof VaultOpError ? e.message : e instanceof Error ? e.message : String(e);
