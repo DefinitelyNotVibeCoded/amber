@@ -1,6 +1,6 @@
 "use client";
 
-import { Network, FileText, Plus, Settings, Search, History } from "lucide-react";
+import { Network, FileText, Plus, Settings, Search, History, ListFilter } from "lucide-react";
 import type { ViewMode } from "./App";
 import Logo from "./Logo";
 
@@ -66,6 +66,17 @@ export default function Toolbar({
           title="Graph view"
         >
           <Network size={13} /> Graph
+        </button>
+        <button
+          onClick={() => onSetView("query")}
+          className={`px-3 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 transition-colors ${
+            view === "query"
+              ? "bg-[var(--accent-dim)] text-[var(--accent-contrast)]"
+              : "text-[var(--text-1)] hover:text-[var(--text-0)]"
+          }`}
+          title="Query view"
+        >
+          <ListFilter size={13} /> Query
         </button>
       </div>
 

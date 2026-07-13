@@ -11,11 +11,12 @@ import Toolbar from "./Toolbar";
 import NewNoteModal from "./NewNoteModal";
 import SettingsModal from "./SettingsModal";
 import ActivityLogPanel from "./ActivityLogPanel";
+import QueryView from "./QueryView";
 
 const THEME_PRESET_KEY = "amber-theme-preset";
 const THEME_ACCENT_KEY = "amber-theme-accent";
 
-export type ViewMode = "note" | "graph";
+export type ViewMode = "note" | "graph" | "query";
 
 export default function App() {
   const [vault, setVault] = useState<VaultData | null>(null);
@@ -146,6 +147,8 @@ export default function App() {
         <main className="flex-1 min-w-0 flex flex-col">
           {view === "graph" ? (
             <GraphView vault={vault} onSelect={handleSelect} focusPath={selectedPath} />
+          ) : view === "query" ? (
+            <QueryView vault={vault} onSelect={handleSelect} />
           ) : (
             <NoteView
               key={selectedNote?.path}

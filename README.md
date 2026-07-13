@@ -30,6 +30,7 @@ tooling, not just its own.
 - **Desktop app**: packaged with Electron, its own window, its own taskbar icon, not a browser tab
 - **Built-in MCP server**: read *and* write the vault from Claude, Cursor, OpenAI, and more (see below)
 - **Agent Activity Log**: every note an MCP client creates or edits is logged separately from your own edits, with a line diff and one-click revert
+- **Query view**: filter by `type`, `tags`, or any custom frontmatter field (auto-discovered), sort, and save the view, no plugin, no API key
 
 ## Quick start
 

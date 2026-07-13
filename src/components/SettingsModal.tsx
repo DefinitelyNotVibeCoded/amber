@@ -417,8 +417,8 @@ export default function SettingsModal({
                     What&rsquo;s new in this version
                   </h4>
                   <ul className="text-[12.5px] text-[var(--text-1)] flex flex-col gap-1 list-disc pl-4">
+                    <li>Query view: built-in filtering and saved views, no plugin needed</li>
                     <li>Agent Activity Log: review and revert every AI-made edit, with diffs</li>
-                    <li>OpenClaw and Hermes Agent added to the MCP connector list</li>
                     <li>Customizable theme and an interactive knowledge graph</li>
                   </ul>
                 </div>

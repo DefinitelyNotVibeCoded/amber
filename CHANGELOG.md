@@ -2,6 +2,17 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.7.0 (2026-07-13)
+
+- Added a Query view (Dataview-style, built in, no plugin, no API key):
+  filter notes by `type`, `tags`, `title`, `description`, `resource`,
+  `timestamp`, `path`, or any custom frontmatter field the vault actually
+  uses (auto-discovered, e.g. `status`), sort results, and view them as a
+  table. Click a row to open that note.
+- Saved views persist per-vault at `.amber/views.json` (git-ignored):
+  name a filter set, reload it later, delete it when it's no longer useful.
+- New "Query" toggle in the toolbar alongside Note and Graph.
+
 ## 0.6.0 (2026-07-13)
 
 - Added an Agent Activity Log: every note an MCP client creates or edits is
