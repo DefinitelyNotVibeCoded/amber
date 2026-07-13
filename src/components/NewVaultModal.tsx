@@ -120,7 +120,7 @@ export default function NewVaultModal({
                     active ? "border-[var(--accent)] bg-[var(--accent)]" : "border-[var(--border)]"
                   }`}
                 >
-                  {active && <Check size={11} className="text-[#1b1a17]" />}
+                  {active && <Check size={11} className="text-[var(--accent-contrast)]" />}
                 </span>
                 <span>
                   <span className="block text-[13px] font-medium text-[var(--text-0)]">{t.name}</span>
@@ -163,7 +163,7 @@ export default function NewVaultModal({
           <button
             onClick={submit}
             disabled={creating}
-            className="px-3.5 py-1.5 rounded-full text-[13px] font-medium bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[#211a0d] disabled:opacity-60 shadow-[0_2px_8px_-2px_rgba(227,170,74,0.5)]"
+            className="px-3.5 py-1.5 rounded-full text-[13px] font-medium bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[var(--accent-contrast)] disabled:opacity-60 shadow-[0_2px_8px_-2px_rgba(var(--accent-rgb),0.5)]"
           >
             {creating ? "Creating…" : "Create vault"}
           </button>

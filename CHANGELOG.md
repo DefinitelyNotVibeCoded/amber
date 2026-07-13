@@ -2,6 +2,24 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.5.0 (2026-07-12)
+
+- Added theme customization: 5 presets (Amber, Slate, Violet, Forest, Light)
+  plus a custom accent color picker, in Settings, Appearance. Colors persist
+  in localStorage and apply instantly across the whole app.
+- Every accent-dependent color (button text contrast, glow shadows, graph
+  highlights) is now derived from a single accent hex at runtime, so custom
+  colors look correct everywhere instead of just where amber was hardcoded.
+- Rebuilt the knowledge graph to be interactive: scroll to zoom toward the
+  cursor, drag the background to pan, drag individual nodes to reposition
+  them, click a legend type to isolate it, and use the fit-to-view or
+  re-run-layout buttons to recover or reset.
+- Fixed two bugs found while testing the graph rewrite: dimmed graph
+  elements were unreadable on the Light theme (raised the opacity floor),
+  and d3-force mutates link source/target into node object references
+  during simulation, which silently broke link rendering after the
+  interactivity rewrite (normalized back to id strings after layout).
+
 ## 0.4.0 (2026-07-12)
 
 - Added vault templates: Blank, Second Brain, Team Knowledge Base, and

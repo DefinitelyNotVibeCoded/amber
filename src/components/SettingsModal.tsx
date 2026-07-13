@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Settings as SettingsIcon, FolderCog, Plug, Info, Copy, Check, ExternalLink, FolderPlus } from "lucide-react";
+import { X, Settings as SettingsIcon, FolderCog, Plug, Info, Copy, Check, ExternalLink, FolderPlus, Palette, RotateCcw } from "lucide-react";
 import Logo from "./Logo";
 import NewVaultModal from "./NewVaultModal";
+import { THEME_PRESETS, getThemeBase } from "@/lib/themes";
 
-type Tab = "general" | "mcp" | "about";
+type Tab = "general" | "appearance" | "mcp" | "about";
 
 interface StdioConnector {
   label: string;
@@ -102,10 +103,18 @@ function CopyBlock({ text }: { text: string }) {
 
 export default function SettingsModal({
   currentPath,
+  themePreset,
+  accentOverride,
+  onSetThemePreset,
+  onSetAccentOverride,
   onClose,
   onSaved,
 }: {
   currentPath: string;
+  themePreset: string;
+  accentOverride: string | null;
+  onSetThemePreset: (id: string) => void;
+  onSetAccentOverride: (hex: string | null) => void;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -168,6 +177,12 @@ export default function SettingsModal({
             <SettingsIcon size={14} /> Settings
           </h2>
           <NavButton active={tab === "general"} onClick={() => setTab("general")} icon={<FolderCog size={14} />} label="General" />
+          <NavButton
+            active={tab === "appearance"}
+            onClick={() => setTab("appearance")}
+            icon={<Palette size={14} />}
+            label="Appearance"
+          />
           <NavButton active={tab === "mcp"} onClick={() => setTab("mcp")} icon={<Plug size={14} />} label="MCP Server" />
           <NavButton active={tab === "about"} onClick={() => setTab("about")} icon={<Info size={14} />} label="About" />
         </div>
@@ -202,7 +217,7 @@ export default function SettingsModal({
                   <button
                     onClick={submit}
                     disabled={saving}
-                    className="px-3.5 py-1.5 rounded-full text-[13px] font-medium bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[#211a0d] disabled:opacity-60 shadow-[0_2px_8px_-2px_rgba(227,170,74,0.5)] w-fit"
+                    className="px-3.5 py-1.5 rounded-full text-[13px] font-medium bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[var(--accent-contrast)] disabled:opacity-60 shadow-[0_2px_8px_-2px_rgba(var(--accent-rgb),0.5)] w-fit"
                   >
                     {saving ? "Switching…" : "Switch vault"}
                   </button>
@@ -216,6 +231,66 @@ export default function SettingsModal({
                   >
                     <FolderPlus size={13} /> Create new vault
                   </button>
+                </div>
+              </div>
+            )}
+
+            {tab === "appearance" && (
+              <div className="flex flex-col gap-5 max-w-[440px]">
+                <div>
+                  <h3 className="text-[14px] font-semibold mb-1">Theme</h3>
+                  <p className="text-[12.5px] text-[var(--text-2)]">Pick a preset, or set your own accent color below.</p>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {THEME_PRESETS.map((t) => {
+                    const active = themePreset === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        onClick={() => onSetThemePreset(t.id)}
+                        className={`text-left p-2.5 rounded-[var(--radius-sm)] border transition-colors ${
+                          active ? "border-[var(--accent)]" : "border-[var(--border-soft)] hover:border-[var(--border)]"
+                        }`}
+                        style={{ background: t.bg1 }}
+                      >
+                        <div className="flex items-center gap-1.5 mb-2">
+                          <span className="w-3.5 h-3.5 rounded-full border border-black/20" style={{ background: t.bg0 }} />
+                          <span className="w-3.5 h-3.5 rounded-full border border-black/20" style={{ background: t.accent }} />
+                          <span className="w-3.5 h-3.5 rounded-full border border-black/20" style={{ background: t.text0 }} />
+                          {active && <Check size={13} className="ml-auto" style={{ color: t.accent }} />}
+                        </div>
+                        <span className="text-[12.5px] font-medium" style={{ color: t.text0 }}>
+                          {t.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="pt-1 border-t border-[var(--border-soft)]">
+                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-2)] mt-3 mb-2">
+                    Custom accent
+                  </h4>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={accentOverride || getThemeBase(themePreset).accent}
+                      onChange={(e) => onSetAccentOverride(e.target.value)}
+                      className="w-9 h-9 rounded-md border border-[var(--border-soft)] bg-transparent cursor-pointer p-0.5"
+                    />
+                    <span className="text-[12.5px] font-mono text-[var(--text-1)]">
+                      {accentOverride || getThemeBase(themePreset).accent}
+                    </span>
+                    {accentOverride && (
+                      <button
+                        onClick={() => onSetAccentOverride(null)}
+                        className="flex items-center gap-1 text-[11.5px] text-[var(--text-2)] hover:text-[var(--text-0)] ml-auto transition-colors"
+                      >
+                        <RotateCcw size={11} /> Reset
+                      </button>
+                    )}
+                  </div>
                 </div>
               </div>
             )}
@@ -254,7 +329,7 @@ export default function SettingsModal({
                       setConnector("claudeDesktop");
                     }}
                     className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
-                      transport === "local" ? "bg-[var(--accent-dim)] text-[#1b1a17]" : "text-[var(--text-1)]"
+                      transport === "local" ? "bg-[var(--accent-dim)] text-[var(--accent-contrast)]" : "text-[var(--text-1)]"
                     }`}
                   >
                     Local (stdio)
@@ -265,7 +340,7 @@ export default function SettingsModal({
                       setConnector("openaiAgentsPython");
                     }}
                     className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
-                      transport === "remote" ? "bg-[var(--accent-dim)] text-[#1b1a17]" : "text-[var(--text-1)]"
+                      transport === "remote" ? "bg-[var(--accent-dim)] text-[var(--accent-contrast)]" : "text-[var(--text-1)]"
                     }`}
                   >
                     Remote (HTTP)
@@ -342,9 +417,9 @@ export default function SettingsModal({
                     What&rsquo;s new in this version
                   </h4>
                   <ul className="text-[12.5px] text-[var(--text-1)] flex flex-col gap-1 list-disc pl-4">
-                    <li>MCP server now speaks both stdio and Streamable HTTP</li>
-                    <li>Connector configs for Claude, Cursor, Windsurf, Gemini CLI, VS Code, and OpenAI</li>
-                    <li>Packaged as an Electron desktop app</li>
+                    <li>Customizable theme: 5 presets plus a custom accent color</li>
+                    <li>Interactive knowledge graph: zoom, pan, drag nodes, filter by type</li>
+                    <li>Vault templates and an MCP server for Claude, Cursor, OpenAI, and more</li>
                   </ul>
                 </div>
                 <a

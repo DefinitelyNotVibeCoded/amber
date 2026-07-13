@@ -77,7 +77,7 @@ export default function NoteView({
             <button
               onClick={save}
               disabled={saving}
-              className="flex items-center gap-1.5 text-[12.5px] px-3 py-1.5 rounded-full bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[#211a0d] font-medium disabled:opacity-60 shadow-[0_2px_8px_-2px_rgba(227,170,74,0.5)]"
+              className="flex items-center gap-1.5 text-[12.5px] px-3 py-1.5 rounded-full bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[var(--accent-contrast)] font-medium disabled:opacity-60 shadow-[0_2px_8px_-2px_rgba(var(--accent-rgb),0.5)]"
             >
               <Save size={13} /> {saving ? "Saving…" : "Save"}
             </button>

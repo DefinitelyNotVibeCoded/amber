@@ -17,6 +17,8 @@
   --accent-bright: #f2c069;
   --accent-dim: #8a651f;
   --accent-soft: rgba(227, 170, 74, 0.14);
+  --accent-rgb: 227, 170, 74;
+  --accent-contrast: #1b1a17;
   --danger: #d1685c;
 
   --radius-sm: 6px;
@@ -43,12 +45,13 @@ body {
   font-family: Inter, -apple-system, "Segoe UI", sans-serif;
   font-size: 14px;
   overflow: hidden;
-  background-image: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(227, 170, 74, 0.07), transparent 60%);
+  background-image: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(var(--accent-rgb), 0.07), transparent 60%);
   background-attachment: fixed;
+  transition: background-color 0.15s ease;
 }
 
 ::selection {
-  background: rgba(227, 170, 74, 0.28);
+  background: rgba(var(--accent-rgb), 0.28);
   color: var(--text-0);
 }
 

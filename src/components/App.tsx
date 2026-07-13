@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { VaultData } from "@/lib/types";
+import { resolveThemeVars } from "@/lib/themes";
 import Logo from "./Logo";
 import Sidebar from "./Sidebar";
 import NoteView from "./NoteView";
@@ -9,6 +10,9 @@ import GraphView from "./GraphView";
 import Toolbar from "./Toolbar";
 import NewNoteModal from "./NewNoteModal";
 import SettingsModal from "./SettingsModal";
+
+const THEME_PRESET_KEY = "amber-theme-preset";
+const THEME_ACCENT_KEY = "amber-theme-accent";
 
 export type ViewMode = "note" | "graph";
 
@@ -24,6 +28,33 @@ export default function App() {
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [showNewNote, setShowNewNote] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [themePreset, setThemePresetState] = useState("amber");
+  const [accentOverride, setAccentOverrideState] = useState<string | null>(null);
+
+  useEffect(() => {
+    const savedPreset = localStorage.getItem(THEME_PRESET_KEY);
+    const savedAccent = localStorage.getItem(THEME_ACCENT_KEY);
+    if (savedPreset) setThemePresetState(savedPreset);
+    if (savedAccent) setAccentOverrideState(savedAccent);
+  }, []);
+
+  useEffect(() => {
+    const vars = resolveThemeVars(themePreset, accentOverride);
+    for (const [key, value] of Object.entries(vars)) {
+      document.documentElement.style.setProperty(key, value);
+    }
+  }, [themePreset, accentOverride]);
+
+  const setThemePreset = useCallback((id: string) => {
+    setThemePresetState(id);
+    localStorage.setItem(THEME_PRESET_KEY, id);
+  }, []);
+
+  const setAccentOverride = useCallback((hex: string | null) => {
+    setAccentOverrideState(hex);
+    if (hex) localStorage.setItem(THEME_ACCENT_KEY, hex);
+    else localStorage.removeItem(THEME_ACCENT_KEY);
+  }, []);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -131,6 +162,10 @@ export default function App() {
       {showSettings && (
         <SettingsModal
           currentPath={vault.root}
+          themePreset={themePreset}
+          accentOverride={accentOverride}
+          onSetThemePreset={setThemePreset}
+          onSetAccentOverride={setAccentOverride}
           onClose={() => setShowSettings(false)}
           onSaved={async () => {
             setShowSettings(false);

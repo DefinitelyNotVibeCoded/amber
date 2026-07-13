@@ -45,7 +45,7 @@ export default function Toolbar({
           onClick={() => onSetView("note")}
           className={`px-3 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 transition-colors ${
             view === "note"
-              ? "bg-[var(--accent-dim)] text-[#1b1a17]"
+              ? "bg-[var(--accent-dim)] text-[var(--accent-contrast)]"
               : "text-[var(--text-1)] hover:text-[var(--text-0)]"
           }`}
           title="Note view"
@@ -56,7 +56,7 @@ export default function Toolbar({
           onClick={() => onSetView("graph")}
           className={`px-3 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 transition-colors ${
             view === "graph"
-              ? "bg-[var(--accent-dim)] text-[#1b1a17]"
+              ? "bg-[var(--accent-dim)] text-[var(--accent-contrast)]"
               : "text-[var(--text-1)] hover:text-[var(--text-0)]"
           }`}
           title="Graph view"
@@ -76,7 +76,7 @@ export default function Toolbar({
 
       <button
         onClick={onNewNote}
-        className="px-3.5 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[#211a0d] shadow-[0_2px_8px_-2px_rgba(227,170,74,0.5)]"
+        className="px-3.5 py-1.5 rounded-full text-[13px] font-medium flex items-center gap-1.5 bg-gradient-to-b from-[var(--accent-bright)] to-[var(--accent-dim)] hover:brightness-110 text-[var(--accent-contrast)] shadow-[0_2px_8px_-2px_rgba(var(--accent-rgb),0.5)]"
       >
         <Plus size={14} /> New note
       </button>
