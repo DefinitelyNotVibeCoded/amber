@@ -1,6 +1,6 @@
 "use client";
 
-import { Network, FileText, Plus, Settings, Search, History, ListFilter, Paperclip } from "lucide-react";
+import { Network, FileText, Plus, Settings, Search, History, ListFilter, Paperclip, Brain } from "lucide-react";
 import type { ViewMode } from "./App";
 import Logo from "./Logo";
 import WindowControls from "./WindowControls";
@@ -90,6 +90,17 @@ export default function Toolbar({
           title="Query view"
         >
           <ListFilter size={13} /> Query
+        </button>
+        <button
+          onClick={() => onSetView("agents")}
+          className={`px-3 py-1 rounded-full text-[12.5px] font-medium flex items-center gap-1.5 transition-colors ${
+            view === "agents"
+              ? "bg-[var(--accent-dim)] text-[var(--accent-contrast)]"
+              : "text-[var(--text-1)] hover:text-[var(--text-0)]"
+          }`}
+          title="Agents view"
+        >
+          <Brain size={13} /> Agents
         </button>
       </div>
 

@@ -1,6 +1,6 @@
 {
   "name": "amber",
-  "version": "0.13.0",
+  "version": "0.14.0",
   "private": true,
   "description": "Amber: an Obsidian-style local app for OKF (Open Knowledge Format) bundles.",
   "author": "Amber",

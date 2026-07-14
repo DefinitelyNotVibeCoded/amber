@@ -43,7 +43,7 @@ const CONTENT_WIDTHS: Record<ContentWidth, string> = {
   wide: "62rem",
 };
 
-export type ViewMode = "note" | "graph" | "query";
+export type ViewMode = "note" | "graph" | "query" | "agents";
 
 export default function App() {
   const [vault, setVault] = useState<VaultData | null>(null);
@@ -246,6 +246,8 @@ export default function App() {
           >
             {view === "graph" ? (
               <GraphView vault={vault} onSelect={handleSelect} focusPath={selectedPath} />
+            ) : view === "agents" ? (
+              <GraphView vault={vault} onSelect={handleSelect} focusPath={selectedPath} mode="agents" />
             ) : view === "query" ? (
               <QueryView vault={vault} onSelect={handleSelect} />
             ) : (

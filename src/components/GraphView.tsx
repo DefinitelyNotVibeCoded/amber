@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, type Simulation } from "d3-force";
-import { Maximize2, RotateCcw } from "lucide-react";
+import { Maximize2, RotateCcw, Radio, FileSearch, Pencil, FilePlus, Info } from "lucide-react";
 import type { VaultData } from "@/lib/types";
 import { colorForType, isReservedFilename } from "@/lib/okfClient";
+import { mix } from "@/lib/color";
+import type { AgentPulseEvent, PulseKind } from "@/lib/agentPulse";
 
 interface NodeMeta {
   id: string;
@@ -46,6 +48,23 @@ const MAX_RADIUS = 20;
 const IDLE_ALPHA_TARGET = 0;
 const DRAG_ALPHA_TARGET = 0.35;
 
+const DORMANT_HEX = "#332f28";
+const KIND_RGB: Record<PulseKind, [number, number, number]> = {
+  read: [94, 200, 224],
+  write: [242, 192, 105],
+};
+const PULSE_FADE_MS = 45000;
+const PULSE_POLL_MS = 1500;
+const TOOL_ICON: Record<string, typeof FileSearch> = {
+  get_vault_info: Info,
+  list_notes: FileSearch,
+  search_notes: FileSearch,
+  read_note: FileSearch,
+  get_backlinks: FileSearch,
+  write_note: Pencil,
+  create_note: FilePlus,
+};
+
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
 }
@@ -54,18 +73,35 @@ function radiusForDegree(degree: number) {
   return clamp(MIN_RADIUS + Math.sqrt(degree) * 3.4, MIN_RADIUS, MAX_RADIUS);
 }
 
+function relativeTime(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  if (ms < 1000) return "just now";
+  if (ms < 60000) return `${Math.floor(ms / 1000)}s ago`;
+  if (ms < 3600000) return `${Math.floor(ms / 60000)}m ago`;
+  return `${Math.floor(ms / 3600000)}h ago`;
+}
+
 type DragState =
   | { type: "pan"; startClientX: number; startClientY: number; startView: ViewTransform; moved: boolean }
   | { type: "node"; id: string; startClientX: number; startClientY: number; moved: boolean };
+
+interface RingBurst {
+  key: string;
+  x: number;
+  y: number;
+  color: string;
+}
 
 export default function GraphView({
   vault,
   onSelect,
   focusPath,
+  mode = "type",
 }: {
   vault: VaultData;
   onSelect: (path: string) => void;
   focusPath: string | null;
+  mode?: "type" | "agents";
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 800, height: 600 });
@@ -76,6 +112,9 @@ export default function GraphView({
   const [view, setView] = useState<ViewTransform>({ x: 0, y: 0, k: 1 });
   const [layoutVersion, setLayoutVersion] = useState(0);
   const [linkCount, setLinkCount] = useState(0);
+  const [feed, setFeed] = useState<AgentPulseEvent[]>([]);
+  const [rings, setRings] = useState<RingBurst[]>([]);
+  const [, forceTick] = useState(0);
 
   const dragRef = useRef<DragState | null>(null);
   const viewRef = useRef<ViewTransform>(view);
@@ -85,7 +124,9 @@ export default function GraphView({
   const simNodesRef = useRef<SimNode[]>([]);
   const simLinksRef = useRef<SimLink[]>([]);
   const nodeElRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const nodeCircleRefs = useRef<Map<string, SVGCircleElement>>(new Map());
   const linkElRefs = useRef<Map<number, SVGPathElement>>(new Map());
+  const pulseHeatRef = useRef<Map<string, { kind: PulseKind; updatedAt: number }>>(new Map());
 
   useEffect(() => {
     const el = containerRef.current;
@@ -120,12 +161,24 @@ export default function GraphView({
     setView({ x: width / 2 - cx * k, y: height / 2 - cy * k, k });
   }, []);
 
-  // Render one animation frame: push current d3 node/link positions straight to the DOM,
-  // bypassing React state so the simulation can run continuously at 60fps.
+  // Render one animation frame: push current d3 node/link positions (and, in agents mode, pulse
+  // colors) straight to the DOM, bypassing React state so the simulation runs continuously at 60fps.
   const renderFrame = useCallback(() => {
+    const now = Date.now();
     for (const n of simNodesRef.current) {
       const el = nodeElRefs.current.get(n.id);
       if (el) el.setAttribute("transform", `translate(${n.x},${n.y})`);
+      if (mode === "agents") {
+        const circle = nodeCircleRefs.current.get(n.id);
+        if (circle) {
+          const pulse = pulseHeatRef.current.get(n.id);
+          const t = pulse ? clamp(1 - (now - pulse.updatedAt) / PULSE_FADE_MS, 0, 1) : 0;
+          const color = pulse ? mix(DORMANT_HEX, KIND_RGB[pulse.kind], t) : DORMANT_HEX;
+          circle.setAttribute("fill", color);
+          const baseR = radiusForDegree(n.degree);
+          circle.setAttribute("r", String((baseR + t * 4) / viewRef.current.k));
+        }
+      }
     }
     for (let i = 0; i < simLinksRef.current.length; i++) {
       const l = simLinksRef.current[i];
@@ -141,7 +194,7 @@ export default function GraphView({
       const my = (s.y + t.y) / 2 + (dx / dist) * bow;
       el.setAttribute("d", `M ${s.x} ${s.y} Q ${mx} ${my} ${t.x} ${t.y}`);
     }
-  }, []);
+  }, [mode]);
 
   // Build the simulation whenever the vault's link graph changes, and let it run continuously
   // (settles gracefully on load, reheats and ripples through neighbors when a node is dragged)
@@ -231,6 +284,50 @@ export default function GraphView({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [size.width, size.height, nodeMetas.length]);
+
+  // Agents mode: poll for new MCP tool calls, light up the notes they touched, and keep a live feed.
+  useEffect(() => {
+    if (mode !== "agents") return;
+    let sinceIso: string | null = new Date(Date.now() - 60000).toISOString();
+    let cancelled = false;
+
+    async function poll() {
+      try {
+        const res = await fetch(`/api/agent-pulse${sinceIso ? `?since=${encodeURIComponent(sinceIso)}` : ""}`);
+        const data = await res.json();
+        if (cancelled) return;
+        sinceIso = data.now;
+        const events: AgentPulseEvent[] = data.events || [];
+        if (events.length === 0) return;
+
+        for (const ev of events) {
+          for (const p of ev.paths) {
+            pulseHeatRef.current.set(p, { kind: ev.kind, updatedAt: Date.now() });
+            const n = simNodesRef.current.find((sn) => sn.id === p);
+            if (n) {
+              const color = KIND_RGB[ev.kind];
+              setRings((prev) => [
+                ...prev.slice(-11),
+                { key: `${ev.id}-${p}`, x: n.x, y: n.y, color: `rgb(${color.join(",")})` },
+              ]);
+            }
+          }
+        }
+        setFeed((prev) => [...events, ...prev].slice(0, 10));
+      } catch {
+        // transient fetch failure, just retry on the next interval
+      }
+    }
+
+    poll();
+    const interval = setInterval(poll, PULSE_POLL_MS);
+    const tickInterval = setInterval(() => forceTick((t) => t + 1), 1000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+      clearInterval(tickInterval);
+    };
+  }, [mode]);
 
   const screenToGraph = useCallback((clientX: number, clientY: number) => {
     const rect = containerRef.current!.getBoundingClientRect();
@@ -328,6 +425,7 @@ export default function GraphView({
   }, [hovered, focusPath, linkMetas, typeFilter, nodeMetas]);
 
   const isDimmed = (node: NodeMeta) => {
+    if (mode === "agents") return false;
     if (typeFilter) return node.type !== typeFilter;
     return neighborIds ? !neighborIds.has(node.id) : false;
   };
@@ -363,6 +461,12 @@ export default function GraphView({
           <filter id="nodeShadow" x="-100%" y="-100%" width="300%" height="300%">
             <feDropShadow dx="0" dy="1" stdDeviation="2.5" floodColor="#000" floodOpacity="0.45" />
           </filter>
+          <style>{`
+            @keyframes pulseRingAnim {
+              from { r: 10; stroke-opacity: 0.85; }
+              to { r: 34; stroke-opacity: 0; }
+            }
+          `}</style>
         </defs>
         <g transform={`translate(${view.x},${view.y}) scale(${view.k})`}>
           <g fill="none">
@@ -378,14 +482,28 @@ export default function GraphView({
                     if (el) linkElRefs.current.set(i, el);
                     else linkElRefs.current.delete(i);
                   }}
-                  stroke={dim ? "var(--text-2)" : "var(--accent-dim)"}
-                  strokeOpacity={dim ? 0.3 : 0.8}
+                  stroke={mode === "agents" ? "var(--border)" : dim ? "var(--text-2)" : "var(--accent-dim)"}
+                  strokeOpacity={mode === "agents" ? 0.5 : dim ? 0.3 : 0.8}
                   strokeWidth={1.3 / view.k}
                   style={{ transition: "stroke-opacity 0.2s ease" }}
                 />
               );
             })}
           </g>
+          {mode === "agents" &&
+            rings.map((ring) => (
+              <circle
+                key={ring.key}
+                cx={ring.x}
+                cy={ring.y}
+                r={10}
+                fill="none"
+                stroke={ring.color}
+                strokeWidth={2}
+                style={{ animation: "pulseRingAnim 1s ease-out forwards" }}
+                onAnimationEnd={() => setRings((prev) => prev.filter((r) => r.key !== ring.key))}
+              />
+            ))}
           <g>
             {nodeMetas.map((n) => {
               const dim = isDimmed(n);
@@ -409,12 +527,16 @@ export default function GraphView({
                 >
                   <circle r={(baseR + 8) / view.k} fill="transparent" />
                   <circle
+                    ref={(el) => {
+                      if (el) nodeCircleRefs.current.set(n.id, el);
+                      else nodeCircleRefs.current.delete(n.id);
+                    }}
                     r={r}
-                    fill={colorForType(n.type, vault.types)}
+                    fill={mode === "agents" ? DORMANT_HEX : colorForType(n.type, vault.types)}
                     stroke="var(--bg-0)"
                     strokeWidth={2 / view.k}
                     filter="url(#nodeShadow)"
-                    style={{ transition: "r 0.15s ease" }}
+                    style={mode === "agents" ? undefined : { transition: "r 0.15s ease" }}
                   />
                   <text
                     x={(baseR + 6) / view.k}
@@ -441,26 +563,66 @@ export default function GraphView({
         </g>
       </svg>
 
-      <div className="absolute bottom-4 left-4 flex flex-wrap gap-1.5 bg-[var(--bg-1)]/90 backdrop-blur-sm border border-[var(--border-soft)] rounded-full px-3 py-2 shadow-[var(--shadow-md)]">
-        {vault.types.map((t) => {
-          const active = typeFilter === t;
-          return (
-            <button
-              key={t}
-              onClick={() => setTypeFilter(active ? null : t)}
-              className={`flex items-center gap-1.5 text-[11px] px-1.5 py-0.5 rounded-full transition-colors ${
-                active ? "bg-[var(--accent-soft)] text-[var(--accent-bright)]" : "text-[var(--text-1)] hover:text-[var(--text-0)]"
-              }`}
-            >
-              <span
-                className="w-2 h-2 rounded-full"
-                style={{ background: colorForType(t, vault.types), boxShadow: `0 0 6px ${colorForType(t, vault.types)}80` }}
-              />
-              {t}
-            </button>
-          );
-        })}
-      </div>
+      {mode === "type" && (
+        <div className="absolute bottom-4 left-4 flex flex-wrap gap-1.5 bg-[var(--bg-1)]/90 backdrop-blur-sm border border-[var(--border-soft)] rounded-full px-3 py-2 shadow-[var(--shadow-md)]">
+          {vault.types.map((t) => {
+            const active = typeFilter === t;
+            return (
+              <button
+                key={t}
+                onClick={() => setTypeFilter(active ? null : t)}
+                className={`flex items-center gap-1.5 text-[11px] px-1.5 py-0.5 rounded-full transition-colors ${
+                  active ? "bg-[var(--accent-soft)] text-[var(--accent-bright)]" : "text-[var(--text-1)] hover:text-[var(--text-0)]"
+                }`}
+              >
+                <span
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: colorForType(t, vault.types), boxShadow: `0 0 6px ${colorForType(t, vault.types)}80` }}
+                />
+                {t}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {mode === "agents" && (
+        <div className="absolute bottom-4 left-4 w-80 max-h-64 overflow-y-auto flex flex-col gap-1 bg-[var(--bg-1)]/90 backdrop-blur-sm border border-[var(--border-soft)] rounded-[var(--radius-md)] p-2.5 shadow-[var(--shadow-md)]">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[var(--text-1)] px-1 pb-1">
+            <Radio size={11} className="text-[var(--accent-bright)]" />
+            Live agent activity
+          </div>
+          {feed.length === 0 && (
+            <div className="text-[11px] text-[var(--text-2)] px-1 py-2">
+              Nothing yet. Connect an MCP client (Settings, MCP Server) and it'll light up here as it reads and writes.
+            </div>
+          )}
+          {feed.map((ev) => {
+            const Icon = TOOL_ICON[ev.tool] || FileSearch;
+            const noteLabel =
+              ev.paths.length === 1
+                ? vault.notes.find((n) => n.path === ev.paths[0])?.title || ev.paths[0]
+                : ev.paths.length > 1
+                  ? `${ev.paths.length} notes`
+                  : ev.detail || "vault";
+            return (
+              <div key={ev.id} className="flex items-center gap-2 px-1 py-1 rounded-md text-[12px]">
+                <span
+                  className={`shrink-0 w-5 h-5 rounded-full flex items-center justify-center ${
+                    ev.kind === "write" ? "text-[var(--accent-bright)] bg-[var(--accent-soft)]" : "text-[#5ec8e0] bg-[#5ec8e01a]"
+                  }`}
+                >
+                  <Icon size={11} />
+                </span>
+                <span className="truncate flex-1 text-[var(--text-0)]">
+                  <span className="text-[var(--text-2)]">{ev.kind === "write" ? "wrote" : "read"}</span> {noteLabel}
+                </span>
+                <span className="shrink-0 text-[10.5px] text-[var(--text-2)] font-mono">{relativeTime(ev.timestamp)}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <span className="text-[11px] text-[var(--text-2)] bg-[var(--bg-1)]/90 backdrop-blur-sm border border-[var(--border-soft)] rounded-full px-3 py-1.5">

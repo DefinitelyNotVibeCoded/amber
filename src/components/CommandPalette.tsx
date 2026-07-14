@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FileText, Waypoints, Table2, Settings, History, FilePlus, Paperclip } from "lucide-react";
+import { FileText, Waypoints, Table2, Settings, History, FilePlus, Paperclip, Brain } from "lucide-react";
 import type { VaultData } from "@/lib/types";
 import type { ViewMode } from "./App";
 import { colorForType, isReservedFilename } from "@/lib/okfClient";
@@ -71,6 +71,13 @@ export default function CommandPalette({
         label: "Go to Query view",
         icon: <Table2 size={14} />,
         onRun: () => onSetView("query"),
+      },
+      {
+        id: "action-view-agents",
+        label: "Go to Agents view",
+        icon: <Brain size={14} />,
+        onRun: () => onSetView("agents"),
+        keywords: "ai brain pulse activity live",
       },
       { id: "action-settings", label: "Open Settings", icon: <Settings size={14} />, onRun: onOpenSettings },
       {

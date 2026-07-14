@@ -5,6 +5,7 @@ import { loadVault } from "../src/lib/okf";
 import { isReservedFilename } from "../src/lib/okfClient";
 import { readNoteRaw, writeNoteRaw, createNote, VaultOpError } from "../src/lib/vaultOps";
 import { appendActivityLogEntry } from "../src/lib/activityLog";
+import { appendAgentPulse } from "../src/lib/agentPulse";
 
 function errorResult(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true as const };
@@ -23,7 +24,9 @@ export function createAmberServer(): McpServer {
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async () => {
-      const vault = loadVault(getVaultPath());
+      const root = getVaultPath();
+      const vault = loadVault(root);
+      appendAgentPulse(root, { tool: "get_vault_info", kind: "read", paths: [] });
       return {
         content: [
           {
@@ -54,7 +57,8 @@ export function createAmberServer(): McpServer {
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async () => {
-      const vault = loadVault(getVaultPath());
+      const root = getVaultPath();
+      const vault = loadVault(root);
       const notes = vault.notes
         .filter((n) => !isReservedFilename(n.filename))
         .map((n) => ({
@@ -64,6 +68,7 @@ export function createAmberServer(): McpServer {
           tags: n.frontmatter.tags,
           description: n.frontmatter.description,
         }));
+      appendAgentPulse(root, { tool: "list_notes", kind: "read", paths: [], detail: `${notes.length} notes` });
       return { content: [{ type: "text", text: JSON.stringify(notes, null, 2) }] };
     }
   );
@@ -84,7 +89,8 @@ export function createAmberServer(): McpServer {
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ query, type, tag }) => {
-      const vault = loadVault(getVaultPath());
+      const root = getVaultPath();
+      const vault = loadVault(root);
       const q = query?.trim().toLowerCase();
       const results = vault.notes
         .filter((n) => !isReservedFilename(n.filename))
@@ -100,6 +106,12 @@ export function createAmberServer(): McpServer {
           return true;
         })
         .map((n) => ({ path: n.path, title: n.title, type: n.frontmatter.type, description: n.frontmatter.description }));
+      appendAgentPulse(root, {
+        tool: "search_notes",
+        kind: "read",
+        paths: results.map((r) => r.path),
+        detail: query || type || tag || undefined,
+      });
       return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
     }
   );
@@ -113,8 +125,10 @@ export function createAmberServer(): McpServer {
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ path }) => {
+      const root = getVaultPath();
       try {
-        const content = readNoteRaw(getVaultPath(), path);
+        const content = readNoteRaw(root, path);
+        appendAgentPulse(root, { tool: "read_note", kind: "read", paths: [path] });
         return { content: [{ type: "text", text: content }] };
       } catch (e) {
         return errorResult(e instanceof Error ? e.message : String(e));
@@ -131,12 +145,14 @@ export function createAmberServer(): McpServer {
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
     async ({ path }) => {
-      const vault = loadVault(getVaultPath());
+      const root = getVaultPath();
+      const vault = loadVault(root);
       const note = vault.notes.find((n) => n.path === path);
       if (!note) return errorResult(`Note not found: ${path}`);
       const backlinks = vault.notes
         .filter((n) => note.backlinks.includes(n.path))
         .map((n) => ({ path: n.path, title: n.title, type: n.frontmatter.type }));
+      appendAgentPulse(root, { tool: "get_backlinks", kind: "read", paths: [path] });
       return { content: [{ type: "text", text: JSON.stringify(backlinks, null, 2) }] };
     }
   );
@@ -166,6 +182,7 @@ export function createAmberServer(): McpServer {
         }
         writeNoteRaw(root, path, content);
         appendActivityLogEntry(root, { tool: "write_note", path, before, after: content });
+        appendAgentPulse(root, { tool: "write_note", kind: "write", paths: [path] });
         return { content: [{ type: "text", text: `Saved ${path}` }] };
       } catch (e) {
         return errorResult(e instanceof Error ? e.message : String(e));
@@ -198,6 +215,7 @@ export function createAmberServer(): McpServer {
         const result = createNote(root, params);
         const after = readNoteRaw(root, result.path);
         appendActivityLogEntry(root, { tool: "create_note", path: result.path, before: null, after });
+        appendAgentPulse(root, { tool: "create_note", kind: "write", paths: [result.path] });
         return { content: [{ type: "text", text: `Created ${result.path}` }] };
       } catch (e) {
         const message = e instanceof VaultOpError ? e.message : e instanceof Error ? e.message : String(e);

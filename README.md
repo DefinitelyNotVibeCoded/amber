@@ -61,6 +61,7 @@ and one click from being reverted.
 | Source | MIT, fully open source | Closed source |
 | AI agents read **and write** | Built-in MCP server, no plugin | Community plugins only, read-mostly |
 | Audit trail for AI edits | Built-in Activity Log with diffs and one-click revert | None |
+| Watch AI activity happen | Built-in Agents view, notes light up live as agents read/write them | None |
 | Filter/sort your notes | Built-in Query view | Requires the Dataview plugin |
 | Desktop app | Free for everyone, including commercial use | Free for personal use only |
 | Plugin ecosystem | Small and young | Huge and mature |
@@ -97,6 +98,9 @@ format open and the AI story first-class, and let the rest stay small.
 - **Agent Activity Log**: every note an MCP client creates or edits is
   logged separately from your own edits, with a line diff and one-click
   revert
+- **Agents view**: a live, alive graph that shows how an agent is actually
+  using the vault, notes glow when an agent reads or writes them and fade
+  back to dormant, with a running feed of what happened and when
 
 ## Quick start
 

@@ -2,6 +2,21 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.14.0 (2026-07-14)
+
+- Added an Agents view: a new toolbar tab (brain icon) that shows how and
+  when connected AI agents are actually using the vault, in real time.
+  Every one of the 7 MCP tools now logs a lightweight pulse event (which
+  notes it touched, and whether it was a read or a write) to
+  `.amber/agent-pulse.json`. The Agents view polls for new events and
+  lights up the notes they touched: nodes sit dormant and gray until an
+  agent reads or writes them, then glow (cyan for reads, amber for
+  writes) with a brief ring-burst animation, fading back to dormant over
+  about 45 seconds. A live feed panel lists the last 10 events with what
+  happened and how long ago.
+- This reuses the same physics engine as the regular Graph view, so the
+  Agents view is just as alive and moveable.
+
 ## 0.13.0 (2026-07-14)
 
 - The knowledge graph is alive now instead of a frozen snapshot. Previously
