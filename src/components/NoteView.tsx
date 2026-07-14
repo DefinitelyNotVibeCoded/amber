@@ -93,7 +93,7 @@ export default function NoteView({
       </div>
 
       <div className="flex-1 min-h-0 overflow-y-auto">
-        <div className="max-w-3xl mx-auto px-8 py-10">
+        <div className="mx-auto px-8 py-10" style={{ maxWidth: "var(--content-width)" }}>
           <h1 className="text-[26px] font-semibold tracking-tight mb-4">{note.title}</h1>
 
           {hasType && (

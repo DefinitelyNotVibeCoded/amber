@@ -63,7 +63,8 @@ function createWindow() {
     backgroundColor: "#171613",
     icon: ICON_PATH,
     title: "Amber",
-    autoHideMenuBar: false,
+    frame: false,
+    autoHideMenuBar: true,
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
@@ -74,6 +75,9 @@ function createWindow() {
 
   mainWindow.once("ready-to-show", () => mainWindow.show());
   mainWindow.loadURL(APP_URL);
+
+  mainWindow.on("maximize", () => mainWindow.webContents.send("window-maximized-change", true));
+  mainWindow.on("unmaximize", () => mainWindow.webContents.send("window-maximized-change", false));
 
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
     if (!url.startsWith(APP_URL)) {
@@ -143,6 +147,15 @@ ipcMain.handle("reveal-in-folder", async (_event, absPath) => {
     shell.showItemInFolder(absPath);
   }
 });
+
+ipcMain.on("window-minimize", () => mainWindow?.minimize());
+ipcMain.on("window-toggle-maximize", () => {
+  if (!mainWindow) return;
+  if (mainWindow.isMaximized()) mainWindow.unmaximize();
+  else mainWindow.maximize();
+});
+ipcMain.on("window-close", () => mainWindow?.close());
+ipcMain.handle("window-is-maximized", () => mainWindow?.isMaximized() ?? false);
 
 app.whenReady().then(async () => {
   buildMenu();

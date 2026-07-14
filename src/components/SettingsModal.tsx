@@ -5,6 +5,7 @@ import { X, Settings as SettingsIcon, FolderCog, Plug, Info, Copy, Check, Extern
 import Logo from "./Logo";
 import NewVaultModal from "./NewVaultModal";
 import { THEME_PRESETS, getThemeBase } from "@/lib/themes";
+import type { ReadingFont, ReadingSize, ContentWidth } from "./App";
 
 type Tab = "general" | "appearance" | "mcp" | "about";
 
@@ -64,6 +65,34 @@ function NavButton({
   );
 }
 
+function SegmentedControl<T extends string>({
+  options,
+  value,
+  onChange,
+}: {
+  options: { value: T; label: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div className="flex items-center gap-0.5 bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-full p-0.5 w-fit">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          onClick={() => onChange(opt.value)}
+          className={`px-3 py-1 rounded-full text-[12px] font-medium transition-colors ${
+            value === opt.value
+              ? "bg-[var(--accent-dim)] text-[var(--accent-contrast)]"
+              : "text-[var(--text-1)] hover:text-[var(--text-0)]"
+          }`}
+        >
+          {opt.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ConnectorChip({ active, onClick, label }: { active: boolean; onClick: () => void; label: string }) {
   return (
     <button
@@ -107,6 +136,12 @@ export default function SettingsModal({
   accentOverride,
   onSetThemePreset,
   onSetAccentOverride,
+  readingFont,
+  readingSize,
+  contentWidth,
+  onSetReadingFont,
+  onSetReadingSize,
+  onSetContentWidth,
   onClose,
   onSaved,
 }: {
@@ -115,6 +150,12 @@ export default function SettingsModal({
   accentOverride: string | null;
   onSetThemePreset: (id: string) => void;
   onSetAccentOverride: (hex: string | null) => void;
+  readingFont: ReadingFont;
+  readingSize: ReadingSize;
+  contentWidth: ContentWidth;
+  onSetReadingFont: (f: ReadingFont) => void;
+  onSetReadingSize: (s: ReadingSize) => void;
+  onSetContentWidth: (w: ContentWidth) => void;
   onClose: () => void;
   onSaved: () => void;
 }) {
@@ -290,6 +331,51 @@ export default function SettingsModal({
                         <RotateCcw size={11} /> Reset
                       </button>
                     )}
+                  </div>
+                </div>
+
+                <div className="pt-1 border-t border-[var(--border-soft)]">
+                  <h4 className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-2)] mt-3 mb-1">
+                    Reading
+                  </h4>
+                  <p className="text-[12px] text-[var(--text-2)] mb-3">How note content is rendered. Changes apply instantly.</p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[12.5px] text-[var(--text-1)]">Font</span>
+                      <SegmentedControl
+                        options={[
+                          { value: "sans" as ReadingFont, label: "Sans" },
+                          { value: "serif" as ReadingFont, label: "Serif" },
+                          { value: "mono" as ReadingFont, label: "Mono" },
+                        ]}
+                        value={readingFont}
+                        onChange={onSetReadingFont}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[12.5px] text-[var(--text-1)]">Text size</span>
+                      <SegmentedControl
+                        options={[
+                          { value: "small" as ReadingSize, label: "S" },
+                          { value: "medium" as ReadingSize, label: "M" },
+                          { value: "large" as ReadingSize, label: "L" },
+                        ]}
+                        value={readingSize}
+                        onChange={onSetReadingSize}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <span className="text-[12.5px] text-[var(--text-1)]">Note width</span>
+                      <SegmentedControl
+                        options={[
+                          { value: "narrow" as ContentWidth, label: "Narrow" },
+                          { value: "normal" as ContentWidth, label: "Normal" },
+                          { value: "wide" as ContentWidth, label: "Wide" },
+                        ]}
+                        value={contentWidth}
+                        onChange={onSetContentWidth}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

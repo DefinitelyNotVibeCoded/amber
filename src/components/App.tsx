@@ -17,7 +17,30 @@ import CommandPalette from "./CommandPalette";
 const THEME_PRESET_KEY = "amber-theme-preset";
 const THEME_ACCENT_KEY = "amber-theme-accent";
 const SIDEBAR_WIDTH_KEY = "amber-sidebar-width";
+const READING_FONT_KEY = "amber-reading-font";
+const READING_SIZE_KEY = "amber-reading-size";
+const CONTENT_WIDTH_KEY = "amber-content-width";
 const DEFAULT_SIDEBAR_WIDTH = 288;
+
+export type ReadingFont = "sans" | "serif" | "mono";
+export type ReadingSize = "small" | "medium" | "large";
+export type ContentWidth = "narrow" | "normal" | "wide";
+
+const READING_FONTS: Record<ReadingFont, string> = {
+  sans: 'Inter, -apple-system, "Segoe UI", sans-serif',
+  serif: 'Georgia, "Times New Roman", serif',
+  mono: '"JetBrains Mono", Consolas, monospace',
+};
+const READING_SIZES: Record<ReadingSize, string> = {
+  small: "13px",
+  medium: "14px",
+  large: "16px",
+};
+const CONTENT_WIDTHS: Record<ContentWidth, string> = {
+  narrow: "40rem",
+  normal: "48rem",
+  wide: "62rem",
+};
 
 export type ViewMode = "note" | "graph" | "query";
 
@@ -39,14 +62,43 @@ export default function App() {
   const [themePreset, setThemePresetState] = useState("amber");
   const [accentOverride, setAccentOverrideState] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidthState] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [readingFont, setReadingFontState] = useState<ReadingFont>("sans");
+  const [readingSize, setReadingSizeState] = useState<ReadingSize>("medium");
+  const [contentWidth, setContentWidthState] = useState<ContentWidth>("normal");
 
   useEffect(() => {
     const savedPreset = localStorage.getItem(THEME_PRESET_KEY);
     const savedAccent = localStorage.getItem(THEME_ACCENT_KEY);
     const savedWidth = localStorage.getItem(SIDEBAR_WIDTH_KEY);
+    const savedFont = localStorage.getItem(READING_FONT_KEY) as ReadingFont | null;
+    const savedSize = localStorage.getItem(READING_SIZE_KEY) as ReadingSize | null;
+    const savedContentWidth = localStorage.getItem(CONTENT_WIDTH_KEY) as ContentWidth | null;
     if (savedPreset) setThemePresetState(savedPreset);
     if (savedAccent) setAccentOverrideState(savedAccent);
     if (savedWidth) setSidebarWidthState(Number(savedWidth));
+    if (savedFont && READING_FONTS[savedFont]) setReadingFontState(savedFont);
+    if (savedSize && READING_SIZES[savedSize]) setReadingSizeState(savedSize);
+    if (savedContentWidth && CONTENT_WIDTHS[savedContentWidth]) setContentWidthState(savedContentWidth);
+  }, []);
+
+  useEffect(() => {
+    const root = document.documentElement.style;
+    root.setProperty("--reading-font", READING_FONTS[readingFont]);
+    root.setProperty("--reading-size", READING_SIZES[readingSize]);
+    root.setProperty("--content-width", CONTENT_WIDTHS[contentWidth]);
+  }, [readingFont, readingSize, contentWidth]);
+
+  const setReadingFont = useCallback((f: ReadingFont) => {
+    setReadingFontState(f);
+    localStorage.setItem(READING_FONT_KEY, f);
+  }, []);
+  const setReadingSize = useCallback((s: ReadingSize) => {
+    setReadingSizeState(s);
+    localStorage.setItem(READING_SIZE_KEY, s);
+  }, []);
+  const setContentWidth = useCallback((w: ContentWidth) => {
+    setContentWidthState(w);
+    localStorage.setItem(CONTENT_WIDTH_KEY, w);
   }, []);
 
   const setSidebarWidth = useCallback((width: number) => {
@@ -219,6 +271,12 @@ export default function App() {
           accentOverride={accentOverride}
           onSetThemePreset={setThemePreset}
           onSetAccentOverride={setAccentOverride}
+          readingFont={readingFont}
+          readingSize={readingSize}
+          contentWidth={contentWidth}
+          onSetReadingFont={setReadingFont}
+          onSetReadingSize={setReadingSize}
+          onSetContentWidth={setContentWidth}
           onClose={() => setShowSettings(false)}
           onSaved={async () => {
             setShowSettings(false);

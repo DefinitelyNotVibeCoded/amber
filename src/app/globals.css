@@ -28,6 +28,18 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.25);
   --shadow-md: 0 6px 20px -4px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 20px 50px -12px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.35);
+
+  --content-width: 48rem;
+  --reading-font: Inter, -apple-system, "Segoe UI", sans-serif;
+  --reading-size: 14px;
+}
+
+/* Frameless window support: the toolbar doubles as the title bar. */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
 }
 
 * {
@@ -172,6 +184,10 @@ button:focus-visible {
 }
 .markdown-body h3 {
   font-size: 1.08em;
+}
+.markdown-body {
+  font-family: var(--reading-font);
+  font-size: var(--reading-size);
 }
 .markdown-body p {
   line-height: 1.7;

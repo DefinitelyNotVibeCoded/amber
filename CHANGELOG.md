@@ -2,6 +2,18 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.9.0 (2026-07-13)
+
+- The desktop app no longer shows the default Windows title bar. The window
+  is frameless: Amber's own toolbar is the title bar (drag it to move the
+  window, double-click it to maximize) with custom minimize, maximize, and
+  close buttons on the right.
+- New Reading section in Settings, Appearance: choose the note font (sans,
+  serif, or mono), text size (S/M/L), and note column width (narrow, normal,
+  wide). All apply instantly and persist.
+- Cleaner toolbar: slimmer height, the vault path moved out of the bar and
+  into the logo tooltip (it still lives in Settings, General).
+
 ## 0.8.0 (2026-07-13)
 
 - Rebuilt the knowledge graph view: zoom, pan, drag nodes, fit-to-view, and
