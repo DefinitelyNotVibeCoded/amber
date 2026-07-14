@@ -2,6 +2,21 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.10.0 (2026-07-14)
+
+- Hid the Next.js dev tools indicator that showed up in the corner during
+  development.
+- Rebuilt the New note dialog: it now opens to just a title and a row of
+  colored type chips, with folder, filename, description, and tags tucked
+  behind an "Advanced" toggle instead of shown upfront.
+- Each note type now seeds a starting body structure when you create a
+  note (Concept, Person, Decision, and Tool each get their own section
+  headers), and picking a type auto-picks the matching folder (Person to
+  `/people`, Decision to `/decisions`, and so on).
+- New notes now open straight into edit mode with that template filled in,
+  ready to type into immediately instead of landing on a mostly-blank
+  rendered page.
+
 ## 0.9.0 (2026-07-13)
 
 - The desktop app no longer shows the default Windows title bar. The window

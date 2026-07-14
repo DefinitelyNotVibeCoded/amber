@@ -11,11 +11,15 @@ export default function NoteView({
   note,
   onNavigate,
   onSaved,
+  autoEdit,
+  onAutoEditHandled,
 }: {
   vault: VaultData;
   note: OkfNote | null;
   onNavigate: (path: string) => void;
   onSaved: () => Promise<void> | void;
+  autoEdit?: boolean;
+  onAutoEditHandled?: () => void;
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -24,6 +28,11 @@ export default function NoteView({
 
   useEffect(() => {
     setEditing(false);
+    if (autoEdit && note) {
+      startEdit();
+      onAutoEditHandled?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note?.path]);
 
   if (!note) {

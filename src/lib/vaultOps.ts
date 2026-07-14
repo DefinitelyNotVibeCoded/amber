@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { resolveInVault } from "./pathSafety";
+import { bodyTemplateForType } from "./noteTemplates";
 
 export interface CreateNoteParams {
   dir: string; // bundle-relative dir, e.g. "/concepts"
@@ -115,6 +116,7 @@ export function createNote(root: string, params: CreateNoteParams): { path: stri
     "",
     `# ${title || filename.replace(/\.md$/, "")}`,
     "",
+    bodyTemplateForType(type),
   ].filter((l): l is string => l !== null);
 
   fs.writeFileSync(abs, frontmatterLines.join("\n"), "utf-8");

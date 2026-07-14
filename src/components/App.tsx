@@ -62,6 +62,7 @@ export default function App() {
   const [themePreset, setThemePresetState] = useState("amber");
   const [accentOverride, setAccentOverrideState] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidthState] = useState(DEFAULT_SIDEBAR_WIDTH);
+  const [autoEditPath, setAutoEditPath] = useState<string | null>(null);
   const [readingFont, setReadingFontState] = useState<ReadingFont>("sans");
   const [readingSize, setReadingSizeState] = useState<ReadingSize>("medium");
   const [contentWidth, setContentWidthState] = useState<ContentWidth>("normal");
@@ -245,7 +246,14 @@ export default function App() {
             ) : view === "query" ? (
               <QueryView vault={vault} onSelect={handleSelect} />
             ) : (
-              <NoteView vault={vault} note={selectedNote} onNavigate={handleSelect} onSaved={reload} />
+              <NoteView
+                vault={vault}
+                note={selectedNote}
+                onNavigate={handleSelect}
+                onSaved={reload}
+                autoEdit={selectedNote?.path === autoEditPath}
+                onAutoEditHandled={() => setAutoEditPath(null)}
+              />
             )}
           </div>
         </main>
@@ -260,6 +268,7 @@ export default function App() {
             await reload();
             setSelectedPath(path);
             setView("note");
+            setAutoEditPath(path);
           }}
         />
       )}
