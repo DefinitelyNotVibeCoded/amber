@@ -2,6 +2,25 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.12.0 (2026-07-14)
+
+- Added an Obsidian import. Settings, General, Create new vault now has an
+  "Import from Obsidian" mode: point it at an existing Obsidian vault and
+  a new folder, and it copies every note over, converting `[[wiki-links]]`
+  and `![[embeds]]` to OKF-style markdown links (embeds of images and
+  other files are copied into `/attachments`), normalizing string-style
+  `tags:` frontmatter into a real array, and adding `type: Note` to
+  anything that didn't already have a `type`. The original Obsidian vault
+  is never modified. A summary screen after the import shows how many
+  notes converted, how many links resolved versus couldn't be matched
+  (those become bold text instead of a broken link), and lists every
+  unresolved one so they're easy to find and fix by hand.
+- Redesigned the MCP diagram in the README: bigger canvas, a properly
+  scaled logo, real arrowheads, and a third node for the vault itself so
+  it shows the whole path instead of stopping at the server.
+- The README's MCP section now shows a real Claude Desktop config snippet
+  and a table of all 7 MCP tools instead of a parenthetical list.
+
 ## 0.11.0 (2026-07-14)
 
 - Added document attachments. OKF's `resource` field is normally a pointer

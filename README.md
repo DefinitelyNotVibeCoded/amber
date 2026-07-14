@@ -57,6 +57,7 @@ and one click from being reverted.
 | | Amber | Obsidian |
 | --- | --- | --- |
 | File format | [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf), a published open spec | Proprietary wiki-link dialect |
+| Migrating in | One-click import, converts `[[wiki-links]]` and `![[embeds]]` for you | N/A, you're already there |
 | Source | MIT, fully open source | Closed source |
 | AI agents read **and write** | Built-in MCP server, no plugin | Community plugins only, read-mostly |
 | Audit trail for AI edits | Built-in Activity Log with diffs and one-click revert | None |
@@ -73,6 +74,10 @@ format open and the AI story first-class, and let the rest stay small.
   filters, resizable sidebar, right-click rename/delete, hover previews on
   internal links
 - **Command palette**: `Ctrl`/`Cmd`+`K` fuzzy-jumps to any note or action
+- **Obsidian import**: point Amber at an existing Obsidian vault and it
+  converts `[[wiki-links]]` and `![[embeds]]` to OKF-style markdown links,
+  copies attachments over, and adds the `type` frontmatter OKF requires,
+  your original vault is never touched
 - **Note view**: OKF frontmatter (`type`, `description`, `resource`, `tags`,
   `timestamp`) rendered as a metadata card above the markdown, in-place
   editing that writes straight back to the `.md` file, no database
