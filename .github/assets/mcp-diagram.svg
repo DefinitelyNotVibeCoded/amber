@@ -1,39 +1,82 @@
-<svg width="900" height="260" viewBox="0 0 900 260" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, sans-serif">
+<svg width="1100" height="340" viewBox="0 0 1100 340" xmlns="http://www.w3.org/2000/svg" font-family="-apple-system, Segoe UI, sans-serif">
   <defs>
-    <linearGradient id="amberBody2" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
+    <linearGradient id="bg" x1="0" y1="0" x2="1100" y2="340" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1d1c18"/>
+      <stop offset="100%" stop-color="#141310"/>
+    </linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#3c382f" fill-opacity="0.45"/>
+    </pattern>
+    <radialGradient id="glow" cx="50%" cy="50%" r="60%">
+      <stop offset="0%" stop-color="#e3aa4a" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#e3aa4a" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="amberBody3" x1="4" y1="2" x2="28" y2="30" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#f8dfa0"/>
       <stop offset="48%" stop-color="#e0a53f"/>
       <stop offset="100%" stop-color="#8a5a1c"/>
     </linearGradient>
+    <linearGradient id="amberHighlight3" x1="8" y1="3" x2="17" y2="13" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#e3aa4a" fill-opacity="0.9"/>
+    </marker>
   </defs>
-  <rect width="900" height="260" fill="#141310" rx="14"/>
+
+  <rect width="1100" height="340" fill="url(#bg)" rx="16"/>
+  <rect width="1100" height="340" fill="url(#dots)" rx="16"/>
+  <rect x="450" y="20" width="300" height="300" fill="url(#glow)"/>
 
   <!-- left: stdio clients -->
-  <rect x="40" y="45" width="220" height="90" rx="10" fill="#1d1c18" stroke="#38352c"/>
-  <text x="60" y="70" font-size="13" fill="#ede8db" font-weight="600">stdio</text>
-  <text x="60" y="92" font-size="12" fill="#b3ac9c">Claude Desktop / Code</text>
-  <text x="60" y="110" font-size="12" fill="#b3ac9c">Cursor · Windsurf · Gemini CLI · VS Code</text>
+  <rect x="40" y="46" width="300" height="112" rx="12" fill="#211f1b" stroke="#38352c"/>
+  <text x="64" y="76" font-size="14.5" fill="#ede8db" font-weight="700">stdio</text>
+  <text x="64" y="99" font-size="12.5" fill="#b3ac9c">Claude Desktop &#183; Claude Code</text>
+  <text x="64" y="119" font-size="12.5" fill="#b3ac9c">Cursor &#183; Windsurf &#183; Gemini CLI</text>
+  <text x="64" y="139" font-size="12.5" fill="#b3ac9c">VS Code &#183; OpenClaw &#183; Hermes</text>
 
-  <!-- left: http clients -->
-  <rect x="40" y="150" width="220" height="70" rx="10" fill="#1d1c18" stroke="#38352c"/>
-  <text x="60" y="173" font-size="13" fill="#ede8db" font-weight="600">Streamable HTTP</text>
-  <text x="60" y="195" font-size="12" fill="#b3ac9c">OpenAI Agents SDK · Responses API</text>
-  <text x="60" y="211" font-size="12" fill="#b3ac9c">ChatGPT connectors*</text>
+  <!-- left: streamable http clients -->
+  <rect x="40" y="182" width="300" height="92" rx="12" fill="#211f1b" stroke="#38352c"/>
+  <text x="64" y="212" font-size="14.5" fill="#ede8db" font-weight="700">Streamable HTTP</text>
+  <text x="64" y="235" font-size="12.5" fill="#b3ac9c">OpenAI Agents SDK &#183; Responses API</text>
+  <text x="64" y="255" font-size="12.5" fill="#b3ac9c">ChatGPT connectors*</text>
 
-  <!-- connecting lines -->
-  <path d="M 260 90 C 400 90, 420 100, 460 118" stroke="#e3aa4a" stroke-opacity="0.55" fill="none"/>
-  <path d="M 260 185 C 400 185, 420 150, 460 128" stroke="#e3aa4a" stroke-opacity="0.55" fill="none"/>
+  <!-- arrows: clients into Amber -->
+  <path d="M 340 102 C 430 102, 450 145, 498 162" stroke="#e3aa4a" stroke-opacity="0.75" stroke-width="2.25" fill="none" marker-end="url(#arrow)"/>
+  <path d="M 340 228 C 430 228, 450 190, 498 175" stroke="#e3aa4a" stroke-opacity="0.75" stroke-width="2.25" fill="none" marker-end="url(#arrow)"/>
 
-  <!-- center: amber -->
-  <g transform="translate(560,130)">
-    <rect x="-80" y="-55" width="160" height="110" rx="14" fill="#211f1b" stroke="#38352c"/>
-    <g transform="translate(-16,-40) scale(1.4)">
-      <polygon points="16,2 27,9 27,23 16,30 5,23 5,9" fill="url(#amberBody2)"/>
+  <!-- center: Amber -->
+  <g transform="translate(600,168)">
+    <rect x="-100" y="-92" width="200" height="184" rx="18" fill="#1d1c18" stroke="#e3aa4a" stroke-opacity="0.45" stroke-width="1.5"/>
+    <g transform="translate(-25,-74) scale(2.15)">
+      <polygon points="16,2 27,9 27,23 16,30 5,23 5,9" fill="url(#amberBody3)" stroke="#5b3a12" stroke-opacity="0.35" stroke-width="0.75"/>
+      <path d="M16 2 L16 30 M5 9 L27 23 M5 23 L27 9" stroke="#5b3a12" stroke-opacity="0.22" stroke-width="0.6" fill="none"/>
+      <polygon points="16,2 22,6 16,11.5 9,7" fill="url(#amberHighlight3)"/>
     </g>
-    <text x="0" y="4" text-anchor="middle" font-size="14" fill="#ede8db" font-weight="600">Amber</text>
-    <text x="0" y="22" text-anchor="middle" font-size="11" fill="#7c7466">vault/*.md on disk</text>
-    <text x="0" y="40" text-anchor="middle" font-size="11" fill="#e3aa4a">7 MCP tools</text>
+    <text x="0" y="16" text-anchor="middle" font-size="19" fill="#ede8db" font-weight="700">Amber</text>
+    <text x="0" y="38" text-anchor="middle" font-size="12" fill="#7c7466">MCP server</text>
+    <rect x="-64" y="52" width="128" height="26" rx="13" fill="#e3aa4a" fill-opacity="0.16"/>
+    <text x="0" y="69" text-anchor="middle" font-size="12" fill="#f2c069" font-weight="600">7 tools &#183; read + write</text>
   </g>
 
-  <text x="780" y="235" font-size="10" fill="#5e574a" text-anchor="middle">*needs a tunnel, ChatGPT can't reach localhost</text>
+  <!-- arrow: Amber <-> vault -->
+  <path d="M 702 168 L 856 168" stroke="#e3aa4a" stroke-opacity="0.75" stroke-width="2.25" fill="none" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+
+  <!-- right: vault files -->
+  <g transform="translate(958,168)">
+    <rect x="-92" y="-88" width="184" height="176" rx="14" fill="#211f1b" stroke="#38352c"/>
+    <g transform="translate(0,-24)">
+      <rect x="-33" y="-38" width="52" height="66" rx="5" fill="#141310" stroke="#38352c" stroke-width="1.2"/>
+      <rect x="-25" y="-44" width="52" height="66" rx="5" fill="#191712" stroke="#38352c" stroke-width="1.2"/>
+      <rect x="-17" y="-50" width="52" height="66" rx="5" fill="#1d1c18" stroke="#e3aa4a" stroke-opacity="0.55" stroke-width="1.3"/>
+      <line x1="-7" y1="-36" x2="25" y2="-36" stroke="#7c7466" stroke-width="1.5" stroke-opacity="0.7"/>
+      <line x1="-7" y1="-28" x2="19" y2="-28" stroke="#7c7466" stroke-width="1.5" stroke-opacity="0.7"/>
+      <line x1="-7" y1="-20" x2="23" y2="-20" stroke="#7c7466" stroke-width="1.5" stroke-opacity="0.7"/>
+    </g>
+    <text x="0" y="58" text-anchor="middle" font-size="13" fill="#ede8db" font-weight="700">Your vault</text>
+    <text x="0" y="77" text-anchor="middle" font-size="11.5" fill="#7c7466">plain .md files on disk</text>
+  </g>
+
+  <text x="550" y="322" font-size="10.5" fill="#5e574a" text-anchor="middle">*ChatGPT's connector picker needs a public HTTPS URL, tunnel the local HTTP server to use it there</text>
 </svg>
