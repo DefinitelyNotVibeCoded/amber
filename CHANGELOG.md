@@ -2,6 +2,21 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.11.0 (2026-07-14)
+
+- Added document attachments. OKF's `resource` field is normally a pointer
+  to an external system (a URL), so Amber previously had no way to attach a
+  local file, and completely ignored any non-`.md` file sitting in the
+  vault. Now the paperclip button (or "Add document" in the command
+  palette) lets you pick a file, which gets copied into `/attachments` and
+  wrapped in a companion OKF note with real YAML frontmatter, so it shows
+  up in the sidebar, graph, and query like any other note.
+- Attached images render inline in the note; other file types (PDF, Word,
+  zip, etc.) get a file card with an Open action, plus a Reveal-in-folder
+  action inside the desktop app.
+- Deleting a document note now also removes its attachment file, as long
+  as no other note still references it.
+
 ## 0.10.0 (2026-07-14)
 
 - Hid the Next.js dev tools indicator that showed up in the corner during

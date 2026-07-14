@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Save, X, Link2, ArrowUpRight } from "lucide-react";
+import { Pencil, Save, X, ArrowUpRight } from "lucide-react";
 import type { OkfNote, VaultData } from "@/lib/types";
 import { colorForType } from "@/lib/okfClient";
 import MarkdownBody from "./MarkdownBody";
+import AttachmentPreview from "./AttachmentPreview";
 
 export default function NoteView({
   vault,
@@ -139,14 +140,7 @@ export default function NoteView({
                 <p className="text-[var(--text-1)] leading-relaxed">{note.frontmatter.description}</p>
               )}
               {note.frontmatter.resource && (
-                <a
-                  href={note.frontmatter.resource}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center gap-1 text-xs external-link w-fit"
-                >
-                  <Link2 size={12} /> {note.frontmatter.resource}
-                </a>
+                <AttachmentPreview resource={note.frontmatter.resource} vaultRoot={vault.root} />
               )}
             </div>
           )}

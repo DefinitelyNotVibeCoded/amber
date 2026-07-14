@@ -30,6 +30,7 @@ function walkMarkdownFiles(dir: string, root: string, out: string[] = []): strin
     if (entry.name.startsWith(".")) continue;
     const full = path.join(dir, entry.name);
     if (entry.isDirectory()) {
+      if (full === path.join(root, "attachments")) continue;
       walkMarkdownFiles(full, root, out);
     } else if (entry.isFile() && entry.name.endsWith(".md")) {
       out.push(full);

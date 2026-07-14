@@ -9,6 +9,7 @@ import NoteView from "./NoteView";
 import GraphView from "./GraphView";
 import Toolbar from "./Toolbar";
 import NewNoteModal from "./NewNoteModal";
+import AddDocumentModal from "./AddDocumentModal";
 import SettingsModal from "./SettingsModal";
 import ActivityLogPanel from "./ActivityLogPanel";
 import QueryView from "./QueryView";
@@ -55,6 +56,7 @@ export default function App() {
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [showNewNote, setShowNewNote] = useState(false);
+  const [showAddDocument, setShowAddDocument] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
@@ -217,6 +219,7 @@ export default function App() {
         search={search}
         onSearch={setSearch}
         onNewNote={() => setShowNewNote(true)}
+        onAddDocument={() => setShowAddDocument(true)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenActivityLog={() => setShowActivityLog(true)}
         onOpenCommandPalette={() => setShowCommandPalette(true)}
@@ -273,6 +276,19 @@ export default function App() {
         />
       )}
 
+      {showAddDocument && (
+        <AddDocumentModal
+          vault={vault}
+          onClose={() => setShowAddDocument(false)}
+          onCreated={async (path) => {
+            setShowAddDocument(false);
+            await reload();
+            setSelectedPath(path);
+            setView("note");
+          }}
+        />
+      )}
+
       {showSettings && (
         <SettingsModal
           currentPath={vault.root}
@@ -314,6 +330,7 @@ export default function App() {
           onSelect={handleSelect}
           onSetView={setView}
           onNewNote={() => setShowNewNote(true)}
+          onAddDocument={() => setShowAddDocument(true)}
           onOpenSettings={() => setShowSettings(true)}
           onOpenActivityLog={() => setShowActivityLog(true)}
         />

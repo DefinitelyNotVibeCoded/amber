@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { resolveInVault } from "./pathSafety";
 import { bodyTemplateForType } from "./noteTemplates";
+import { extOf } from "./attachments";
 
 export interface CreateNoteParams {
   dir: string; // bundle-relative dir, e.g. "/concepts"
@@ -121,4 +122,67 @@ export function createNote(root: string, params: CreateNoteParams): { path: stri
 
   fs.writeFileSync(abs, frontmatterLines.join("\n"), "utf-8");
   return { path: bundlePath };
+}
+
+export interface CreateDocumentParams {
+  dir: string;
+  type: string;
+  title?: string;
+  description?: string;
+  tags?: string[];
+  originalFilename: string;
+  buffer: Buffer;
+}
+
+/** Copies an uploaded file into /attachments and creates a companion OKF note whose `resource` points to it. */
+export function createDocumentNote(root: string, params: CreateDocumentParams): { path: string; resourcePath: string } {
+  const { dir, type, title, description, tags, originalFilename, buffer } = params;
+  if (!type) {
+    throw new VaultOpError("type is required", 400);
+  }
+
+  const ext = extOf(originalFilename);
+  const baseSlug = slugify(title || originalFilename.replace(/\.[^.]+$/, "") || "document");
+
+  fs.mkdirSync(resolveInVault(root, "/attachments"), { recursive: true });
+  let attachmentFilename = ext ? `${baseSlug}.${ext}` : baseSlug;
+  let attachmentAbs = resolveInVault(root, `/attachments/${attachmentFilename}`);
+  let i = 2;
+  while (fs.existsSync(attachmentAbs)) {
+    attachmentFilename = ext ? `${baseSlug}-${i}.${ext}` : `${baseSlug}-${i}`;
+    attachmentAbs = resolveInVault(root, `/attachments/${attachmentFilename}`);
+    i++;
+  }
+  fs.writeFileSync(attachmentAbs, buffer);
+  const resourcePath = `/attachments/${attachmentFilename}`;
+
+  const bundleDir = dir && dir.startsWith("/") ? dir : "/" + (dir || "");
+  let noteFilename = `${baseSlug}.md`;
+  let bundlePath = path.posix.join(bundleDir, noteFilename);
+  let abs = resolveInVault(root, bundlePath);
+  let j = 2;
+  while (fs.existsSync(abs)) {
+    noteFilename = `${baseSlug}-${j}.md`;
+    bundlePath = path.posix.join(bundleDir, noteFilename);
+    abs = resolveInVault(root, bundlePath);
+    j++;
+  }
+  fs.mkdirSync(path.dirname(abs), { recursive: true });
+
+  const frontmatterLines = [
+    "---",
+    `type: ${type}`,
+    `title: "${(title || baseSlug).replace(/"/g, '\\"')}"`,
+    description ? `description: "${description.replace(/"/g, '\\"')}"` : null,
+    `resource: ${resourcePath}`,
+    tags && tags.length ? `tags: [${tags.join(", ")}]` : null,
+    `timestamp: ${new Date().toISOString()}`,
+    "---",
+    "",
+    `# ${title || baseSlug}`,
+    "",
+  ].filter((l): l is string => l !== null);
+
+  fs.writeFileSync(abs, frontmatterLines.join("\n"), "utf-8");
+  return { path: bundlePath, resourcePath };
 }

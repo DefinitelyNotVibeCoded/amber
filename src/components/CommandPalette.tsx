@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FileText, Waypoints, Table2, Settings, History, FilePlus } from "lucide-react";
+import { FileText, Waypoints, Table2, Settings, History, FilePlus, Paperclip } from "lucide-react";
 import type { VaultData } from "@/lib/types";
 import type { ViewMode } from "./App";
 import { colorForType, isReservedFilename } from "@/lib/okfClient";
@@ -21,6 +21,7 @@ export default function CommandPalette({
   onSelect,
   onSetView,
   onNewNote,
+  onAddDocument,
   onOpenSettings,
   onOpenActivityLog,
 }: {
@@ -29,6 +30,7 @@ export default function CommandPalette({
   onSelect: (path: string) => void;
   onSetView: (v: ViewMode) => void;
   onNewNote: () => void;
+  onAddDocument: () => void;
   onOpenSettings: () => void;
   onOpenActivityLog: () => void;
 }) {
@@ -49,6 +51,13 @@ export default function CommandPalette({
         icon: <FilePlus size={14} />,
         onRun: onNewNote,
         keywords: "create add",
+      },
+      {
+        id: "action-add-document",
+        label: "Add document",
+        icon: <Paperclip size={14} />,
+        onRun: onAddDocument,
+        keywords: "attach file upload pdf image",
       },
       { id: "action-view-note", label: "Go to Note view", icon: <FileText size={14} />, onRun: () => onSetView("note") },
       {
@@ -71,7 +80,7 @@ export default function CommandPalette({
         onRun: onOpenActivityLog,
       },
     ],
-    [onNewNote, onSetView, onOpenSettings, onOpenActivityLog]
+    [onNewNote, onAddDocument, onSetView, onOpenSettings, onOpenActivityLog]
   );
 
   const noteItems: PaletteItem[] = useMemo(
