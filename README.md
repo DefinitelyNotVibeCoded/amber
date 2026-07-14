@@ -120,10 +120,30 @@ Prefer a browser tab instead of a desktop window? `npm run dev` and open
   <img src=".github/assets/mcp-diagram.svg" alt="Amber MCP server: stdio for Claude/Cursor/Windsurf/Gemini CLI/VS Code, Streamable HTTP for OpenAI and ChatGPT" width="100%" />
 </p>
 
-Amber ships an MCP server with 7 tools (`get_vault_info`, `list_notes`,
-`search_notes`, `read_note`, `get_backlinks`, `write_note`, `create_note`)
-over **two transports**, so the same vault stays in sync whether you're
-editing in the app or chatting with an agent:
+Amber ships an MCP server, no separate install, no API key. Point any MCP
+client at it and it can read and write your notes like any other tool call.
+
+### Connect Claude Desktop in under a minute
+
+Open **Settings → MCP Server** in Amber, copy the generated config, paste it
+into `claude_desktop_config.json`, restart Claude Desktop. The shape looks
+like this (Amber fills in the real absolute paths for your machine):
+
+```json
+{
+  "mcpServers": {
+    "amber": {
+      "command": "node",
+      "args": ["<path-to-amber>/node_modules/tsx/dist/cli.mjs", "<path-to-amber>/mcp/server.ts"]
+    }
+  }
+}
+```
+
+Claude Code is a single command instead: `claude mcp add amber -- node "<tsx-cli>" "<mcp/server.ts>"`,
+also generated for you with real paths.
+
+### Every client, one server, two transports
 
 | Transport | For | Command |
 | --- | --- | --- |
@@ -136,7 +156,22 @@ Tunnel) to use it there.
 
 Every client's exact config (JSON or YAML, file paths, and copy-paste code
 for the OpenAI SDKs) is generated live in **Settings → MCP Server** with real
-absolute paths for your machine.
+absolute paths for your machine, no manual editing required.
+
+### The 7 tools an agent gets
+
+| Tool | What it does |
+| --- | --- |
+| `get_vault_info` | Root path, note count, every `type` and tag in use |
+| `list_notes` | Every note's path, title, type, tags, and description |
+| `search_notes` | Free-text search plus exact `type`/`tag` filters |
+| `read_note` | Full raw markdown (frontmatter and body) of one note |
+| `get_backlinks` | Every note that links to a given note |
+| `write_note` | Overwrite an existing note's full content |
+| `create_note` | Create a new OKF-conformant note |
+
+`write_note` and `create_note` are logged to the Activity Log below, every
+other tool is read-only.
 
 ### Agent Activity Log
 
