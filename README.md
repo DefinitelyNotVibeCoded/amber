@@ -3,36 +3,102 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/DefinitelyNotVibeCoded/amber/releases/latest"><img src="https://img.shields.io/github/v/release/DefinitelyNotVibeCoded/amber?color=e3aa4a&label=latest" alt="Latest release"></a>
+  <a href="https://github.com/DefinitelyNotVibeCoded/amber/releases/latest"><img src="https://img.shields.io/github/downloads/DefinitelyNotVibeCoded/amber/total?color=e3aa4a&label=downloads" alt="Downloads"></a>
   <a href="https://github.com/DefinitelyNotVibeCoded/amber/blob/main/LICENSE"><img src="https://img.shields.io/github/license/DefinitelyNotVibeCoded/amber?color=e3aa4a" alt="License"></a>
-  <a href="https://github.com/DefinitelyNotVibeCoded/amber/blob/main/package.json"><img src="https://img.shields.io/github/package-json/v/DefinitelyNotVibeCoded/amber?color=e3aa4a" alt="Version"></a>
-  <img src="https://img.shields.io/badge/node-%3E%3D18.18-339933?logo=node.js&logoColor=white" alt="Node">
-  <img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js">
+  <a href="https://github.com/DefinitelyNotVibeCoded/amber/stargazers"><img src="https://img.shields.io/github/stars/DefinitelyNotVibeCoded/amber?color=e3aa4a&style=flat" alt="Stars"></a>
   <img src="https://img.shields.io/badge/Electron-desktop-47848F?logo=electron&logoColor=white" alt="Electron">
+  <img src="https://img.shields.io/badge/Next.js-15-black?logo=next.js" alt="Next.js">
   <img src="https://img.shields.io/badge/MCP-stdio%20%2B%20HTTP-e3aa4a" alt="MCP">
 </p>
 
-Amber is a local, Obsidian-style app for [Open Knowledge Format](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf)
-(OKF) bundles, a knowledge base made of plain markdown, meant to be read and
-maintained by both you and AI agents.
+<p align="center"><b>
+  Amber is a free, open-source, Obsidian-style desktop app for
+  <a href="https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf">Open Knowledge Format</a>
+  (OKF) vaults, built from day one to be read and edited by both you and AI agents.
+</b></p>
 
-Where Obsidian is opaque volcanic glass built around its own note-taking
-conventions, Amber is the transparent, preserving counterpart: a reader,
-editor, and **MCP server** for a format designed to be read by anyone's
-tooling, not just its own.
+<p align="center">
+  <a href="https://github.com/DefinitelyNotVibeCoded/amber/releases/latest"><b>⬇ Download for Windows</b></a>
+  &nbsp;·&nbsp;
+  <a href="#quick-start">Run from source</a>
+  &nbsp;·&nbsp;
+  <a href="#mcp-read-and-write-your-vault-from-ai-tools">MCP setup</a>
+</p>
+
+<p align="center">
+  <img src=".github/assets/screenshots/note.png" alt="Amber note view: metadata card, tags, rendered markdown" width="100%" />
+</p>
+
+Obsidian's file format is a proprietary wiki-link dialect locked to its own
+plugin ecosystem. Amber's is [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf):
+a published, vendor-neutral spec that's just markdown with a handful of YAML
+frontmatter keys, no plugin required to parse it, no lock-in to leave it. And
+because agents already speak markdown and MCP natively, Amber ships an
+**MCP server built in**, not bolted on: Claude, Cursor, Codex, and OpenAI can
+read *and write* your vault directly, with every AI-made edit logged, diffed,
+and one click from being reverted.
+
+## Screenshots
+
+<table>
+<tr>
+<td width="50%"><img src=".github/assets/screenshots/graph.png" alt="Interactive knowledge graph" width="100%"><p align="center"><sub><b>Knowledge graph</b>: force-directed, draggable, colored by type</sub></p></td>
+<td width="50%"><img src=".github/assets/screenshots/query.png" alt="Query view" width="100%"><p align="center"><sub><b>Query view</b>: filter, sort, and save views, no plugin needed</sub></p></td>
+</tr>
+<tr>
+<td width="50%"><img src=".github/assets/screenshots/command-palette.png" alt="Command palette" width="100%"><p align="center"><sub><b>Command palette</b>: <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd> to jump anywhere</sub></p></td>
+<td width="50%"><img src=".github/assets/screenshots/appearance.png" alt="Theme and reading customization" width="100%"><p align="center"><sub><b>Fully themeable</b>: presets, custom accent, font, and text size</sub></p></td>
+</tr>
+</table>
+
+## Amber vs. Obsidian
+
+| | Amber | Obsidian |
+| --- | --- | --- |
+| File format | [OKF](https://github.com/GoogleCloudPlatform/knowledge-catalog/tree/main/okf), a published open spec | Proprietary wiki-link dialect |
+| Source | MIT, fully open source | Closed source |
+| AI agents read **and write** | Built-in MCP server, no plugin | Community plugins only, read-mostly |
+| Audit trail for AI edits | Built-in Activity Log with diffs and one-click revert | None |
+| Filter/sort your notes | Built-in Query view | Requires the Dataview plugin |
+| Desktop app | Free for everyone, including commercial use | Free for personal use only |
+| Plugin ecosystem | Small and young | Huge and mature |
+
+Amber isn't trying to out-plugin Obsidian. It's a different bet: keep the
+format open and the AI story first-class, and let the rest stay small.
 
 ## Features
 
-- **Vault browser**: folder tree sidebar grouped by type, full-text search, type/tag filters
-- **Note view**: parses OKF frontmatter (`type`, `description`, `resource`, `tags`, `timestamp`) into a metadata card above the rendered markdown
-- **Knowledge graph**: force-directed view of every OKF link, colored by `type`, with backlinks on every note
-- **In-place editing**: writes straight back to the `.md` file on disk, no database
-- **New note**: scaffolds a conformant OKF file (`type` required, everything else recommended)
-- **Desktop app**: packaged with Electron, its own window, its own taskbar icon, not a browser tab
-- **Built-in MCP server**: read *and* write the vault from Claude, Cursor, OpenAI, and more (see below)
-- **Agent Activity Log**: every note an MCP client creates or edits is logged separately from your own edits, with a line diff and one-click revert
-- **Query view**: filter by `type`, `tags`, or any custom frontmatter field (auto-discovered), sort, and save the view, no plugin, no API key
+- **Vault browser**: folder tree grouped by type, full-text search, type/tag
+  filters, resizable sidebar, right-click rename/delete, hover previews on
+  internal links
+- **Command palette**: `Ctrl`/`Cmd`+`K` fuzzy-jumps to any note or action
+- **Note view**: OKF frontmatter (`type`, `description`, `resource`, `tags`,
+  `timestamp`) rendered as a metadata card above the markdown, in-place
+  editing that writes straight back to the `.md` file, no database
+- **Document attachments**: attach a PDF, image, or any file; it's copied
+  into the vault and wrapped in a real OKF note with YAML frontmatter, so it
+  shows up in the sidebar, graph, and query like any other note
+- **Knowledge graph**: force-directed, zoomable, draggable, colored by
+  `type`, with backlinks on every note
+- **Query view**: filter by `type`, `tags`, or any custom frontmatter field
+  (auto-discovered), sort, save the view, no plugin, no API key
+- **Theming**: 5 presets plus a custom accent color, independent font,
+  text size, and note-width controls
+- **Native desktop app**: Electron, frameless window, its own taskbar icon,
+  not a browser tab
+- **Built-in MCP server**: read *and* write the vault from Claude, Cursor,
+  OpenAI, and more (see below)
+- **Agent Activity Log**: every note an MCP client creates or edits is
+  logged separately from your own edits, with a line diff and one-click
+  revert
 
 ## Quick start
+
+**Just want to use it?** [Download the Windows installer](https://github.com/DefinitelyNotVibeCoded/amber/releases/latest)
+and run it, no Node.js, no terminal.
+
+**Building from source:**
 
 ```bash
 git clone https://github.com/DefinitelyNotVibeCoded/amber.git
@@ -102,6 +168,13 @@ amber/
 Next.js (App Router) + TypeScript + Tailwind for the app, `gray-matter` +
 custom link resolution for OKF parsing, `d3-force` for the graph layout,
 `@modelcontextprotocol/sdk` for MCP, Electron for the desktop shell.
+
+## Contributing
+
+Issues and pull requests are welcome. This is early software: if something's
+broken, confusing, or missing, [open an issue](https://github.com/DefinitelyNotVibeCoded/amber/issues).
+
+If Amber is useful to you, a star helps other people find it.
 
 ## License
 
