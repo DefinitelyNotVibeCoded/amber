@@ -1,25 +1,36 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide } from "d3-force";
+import { forceSimulation, forceLink, forceManyBody, forceCenter, forceCollide, type Simulation } from "d3-force";
 import { Maximize2, RotateCcw } from "lucide-react";
 import type { VaultData } from "@/lib/types";
 import { colorForType, isReservedFilename } from "@/lib/okfClient";
 
+interface NodeMeta {
+  id: string;
+  title: string;
+  type?: string;
+  degree: number;
+}
+interface LinkMeta {
+  source: string;
+  target: string;
+}
 interface SimNode {
   id: string;
   title: string;
   type?: string;
+  degree: number;
   x: number;
   y: number;
-}
-interface SimLink {
-  source: string;
-  target: string;
-}
-interface RawSimNode extends SimNode {
+  vx: number;
+  vy: number;
   fx?: number | null;
   fy?: number | null;
+}
+interface SimLink {
+  source: SimNode | string;
+  target: SimNode | string;
 }
 interface ViewTransform {
   x: number;
@@ -30,9 +41,17 @@ interface ViewTransform {
 const MIN_ZOOM = 0.25;
 const MAX_ZOOM = 3;
 const DRAG_THRESHOLD = 4;
+const MIN_RADIUS = 6;
+const MAX_RADIUS = 20;
+const IDLE_ALPHA_TARGET = 0;
+const DRAG_ALPHA_TARGET = 0.35;
 
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
+}
+
+function radiusForDegree(degree: number) {
+  return clamp(MIN_RADIUS + Math.sqrt(degree) * 3.4, MIN_RADIUS, MAX_RADIUS);
 }
 
 type DragState =
@@ -50,18 +69,23 @@ export default function GraphView({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ width: 800, height: 600 });
-  const [nodes, setNodes] = useState<SimNode[]>([]);
-  const [links, setLinks] = useState<SimLink[]>([]);
+  const [nodeMetas, setNodeMetas] = useState<NodeMeta[]>([]);
+  const [linkMetas, setLinkMetas] = useState<LinkMeta[]>([]);
   const [hovered, setHovered] = useState<string | null>(null);
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
   const [view, setView] = useState<ViewTransform>({ x: 0, y: 0, k: 1 });
   const [layoutVersion, setLayoutVersion] = useState(0);
+  const [linkCount, setLinkCount] = useState(0);
 
   const dragRef = useRef<DragState | null>(null);
-  const nodesRef = useRef<SimNode[]>([]);
-  nodesRef.current = nodes;
   const viewRef = useRef<ViewTransform>(view);
   viewRef.current = view;
+
+  const simRef = useRef<Simulation<SimNode, SimLink> | null>(null);
+  const simNodesRef = useRef<SimNode[]>([]);
+  const simLinksRef = useRef<SimLink[]>([]);
+  const nodeElRefs = useRef<Map<string, SVGGElement>>(new Map());
+  const linkElRefs = useRef<Map<number, SVGPathElement>>(new Map());
 
   useEffect(() => {
     const el = containerRef.current;
@@ -76,7 +100,7 @@ export default function GraphView({
 
   const graphNotes = useMemo(() => vault.notes.filter((n) => !isReservedFilename(n.filename)), [vault.notes]);
 
-  const fitToView = useCallback((nodeList: SimNode[], width: number, height: number) => {
+  const fitToView = useCallback((nodeList: { x: number; y: number }[], width: number, height: number) => {
     if (nodeList.length === 0) {
       setView({ x: width / 2, y: height / 2, k: 1 });
       return;
@@ -96,60 +120,117 @@ export default function GraphView({
     setView({ x: width / 2 - cx * k, y: height / 2 - cy * k, k });
   }, []);
 
+  // Render one animation frame: push current d3 node/link positions straight to the DOM,
+  // bypassing React state so the simulation can run continuously at 60fps.
+  const renderFrame = useCallback(() => {
+    for (const n of simNodesRef.current) {
+      const el = nodeElRefs.current.get(n.id);
+      if (el) el.setAttribute("transform", `translate(${n.x},${n.y})`);
+    }
+    for (let i = 0; i < simLinksRef.current.length; i++) {
+      const l = simLinksRef.current[i];
+      const s = l.source as SimNode;
+      const t = l.target as SimNode;
+      const el = linkElRefs.current.get(i);
+      if (!el || typeof s !== "object" || typeof t !== "object") continue;
+      const dx = t.x - s.x;
+      const dy = t.y - s.y;
+      const dist = Math.hypot(dx, dy) || 1;
+      const bow = Math.min(dist * 0.14, 26) * (s.id < t.id ? 1 : -1);
+      const mx = (s.x + t.x) / 2 - (dy / dist) * bow;
+      const my = (s.y + t.y) / 2 + (dx / dist) * bow;
+      el.setAttribute("d", `M ${s.x} ${s.y} Q ${mx} ${my} ${t.x} ${t.y}`);
+    }
+  }, []);
+
+  // Build the simulation whenever the vault's link graph changes, and let it run continuously
+  // (settles gracefully on load, reheats and ripples through neighbors when a node is dragged)
+  // instead of the old "tick 400 times then freeze" snapshot.
   useEffect(() => {
-    const simNodes: RawSimNode[] = graphNotes.map((n) => ({
-      id: n.path,
-      title: n.title,
-      type: n.frontmatter.type,
-      x: 0,
-      y: 0,
-    }));
-    const validIds = new Set(simNodes.map((n) => n.id));
-    const simLinks: SimLink[] = [];
+    const degree = new Map<string, number>();
+    const validIds = new Set(graphNotes.map((n) => n.path));
+    const rawLinks: LinkMeta[] = [];
     for (const n of graphNotes) {
       for (const l of n.links) {
         if (validIds.has(l.target) && l.target !== n.path) {
-          simLinks.push({ source: n.path, target: l.target });
+          rawLinks.push({ source: n.path, target: l.target });
+          degree.set(n.path, (degree.get(n.path) || 0) + 1);
+          degree.set(l.target, (degree.get(l.target) || 0) + 1);
         }
       }
     }
 
-    const sim = forceSimulation(simNodes as any)
+    const angleStep = (Math.PI * 2) / Math.max(graphNotes.length, 1);
+    const simNodes: SimNode[] = graphNotes.map((n, i) => {
+      const r = 60 + (i % 5) * 30;
+      return {
+        id: n.path,
+        title: n.title,
+        type: n.frontmatter.type,
+        degree: degree.get(n.path) || 0,
+        x: Math.cos(i * angleStep) * r,
+        y: Math.sin(i * angleStep) * r,
+        vx: 0,
+        vy: 0,
+      };
+    });
+    const simLinks: SimLink[] = rawLinks.map((l) => ({ source: l.source, target: l.target }));
+
+    simNodesRef.current = simNodes;
+    simLinksRef.current = simLinks;
+    setNodeMetas(simNodes.map((n) => ({ id: n.id, title: n.title, type: n.type, degree: n.degree })));
+    setLinkMetas(rawLinks);
+    setLinkCount(rawLinks.length);
+    nodeElRefs.current.clear();
+    linkElRefs.current.clear();
+
+    simRef.current?.stop();
+    const sim = forceSimulation(simNodes)
       .force(
         "link",
-        forceLink(simLinks as any)
-          .id((d: any) => d.id)
+        forceLink<SimNode, SimLink>(simLinks)
+          .id((d) => d.id)
           .distance(170)
           .strength(0.22)
       )
       .force("charge", forceManyBody().strength(-520))
       .force("center", forceCenter(0, 0))
-      .force("collide", forceCollide(62))
-      .stop();
+      .force(
+        "collide",
+        forceCollide<SimNode>().radius((d) => radiusForDegree(d.degree) + 14)
+      )
+      .alphaDecay(0.018)
+      .velocityDecay(0.38)
+      .on("tick", renderFrame);
+    simRef.current = sim;
 
-    for (let i = 0; i < 400; i++) sim.tick();
+    let raf = requestAnimationFrame(function loop() {
+      renderFrame();
+      raf = requestAnimationFrame(loop);
+    });
 
-    const finalNodes = simNodes.map((n) => ({ id: n.id, title: n.title, type: n.type, x: n.x, y: n.y }));
-    // d3-force mutates link.source/target from id strings into node object references while ticking; normalize back to ids.
-    const finalLinks: SimLink[] = simLinks.map((l: any) => ({
-      source: typeof l.source === "string" ? l.source : l.source.id,
-      target: typeof l.target === "string" ? l.target : l.target.id,
-    }));
-    setNodes(finalNodes);
-    setLinks(finalLinks);
-    fitToView(finalNodes, size.width, size.height);
+    // First graceful settle, then fit the camera to the resting layout.
+    const fitTimer = setTimeout(() => {
+      fitToView(simNodesRef.current, size.width, size.height);
+    }, 900);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      sim.stop();
+      clearTimeout(fitTimer);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graphNotes, layoutVersion]);
+  }, [graphNotes, layoutVersion, renderFrame]);
 
   // Re-fit only on first size measurement (avoid re-fitting on every resize once user has interacted)
   const didInitialFit = useRef(false);
   useEffect(() => {
-    if (!didInitialFit.current && nodes.length > 0 && size.width > 0) {
+    if (!didInitialFit.current && simNodesRef.current.length > 0 && size.width > 0) {
       didInitialFit.current = true;
-      fitToView(nodes, size.width, size.height);
+      fitToView(simNodesRef.current, size.width, size.height);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [size.width, size.height, nodes.length]);
+  }, [size.width, size.height, nodeMetas.length]);
 
   const screenToGraph = useCallback((clientX: number, clientY: number) => {
     const rect = containerRef.current!.getBoundingClientRect();
@@ -192,14 +273,24 @@ export default function GraphView({
         setView({ x: drag.startView.x + dx, y: drag.startView.y + dy, k: drag.startView.k });
       } else {
         const { x, y } = screenToGraph(e.clientX, e.clientY);
-        setNodes((prev) => prev.map((n) => (n.id === drag.id ? { ...n, x, y } : n)));
+        const n = simNodesRef.current.find((n) => n.id === drag.id);
+        if (n) {
+          n.fx = x;
+          n.fy = y;
+        }
       }
     }
-    function onMouseUp(e: MouseEvent) {
+    function onMouseUp() {
       const drag = dragRef.current;
       if (!drag) return;
-      if (drag.type === "node" && !drag.moved) {
-        onSelect(drag.id);
+      if (drag.type === "node") {
+        const n = simNodesRef.current.find((n) => n.id === drag.id);
+        if (n) {
+          n.fx = null;
+          n.fy = null;
+        }
+        simRef.current?.alphaTarget(IDLE_ALPHA_TARGET);
+        if (!drag.moved) onSelect(drag.id);
       }
       dragRef.current = null;
     }
@@ -212,19 +303,31 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [screenToGraph, onSelect]);
 
-  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+  const startNodeDrag = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    dragRef.current = { type: "node", id, startClientX: e.clientX, startClientY: e.clientY, moved: false };
+    const n = simNodesRef.current.find((n) => n.id === id);
+    if (n) {
+      n.fx = n.x;
+      n.fy = n.y;
+    }
+    // Reheat the whole simulation so connected neighbors ripple with the drag instead of moving in isolation.
+    simRef.current?.alphaTarget(DRAG_ALPHA_TARGET).restart();
+  };
+
   const neighborIds = useMemo(() => {
     const active = hovered || focusPath;
-    if (typeFilter || !active || !nodeById.has(active)) return null;
+    const knownIds = new Set(nodeMetas.map((n) => n.id));
+    if (typeFilter || !active || !knownIds.has(active)) return null;
     const set = new Set<string>([active]);
-    for (const l of links) {
+    for (const l of linkMetas) {
       if (l.source === active) set.add(l.target);
       if (l.target === active) set.add(l.source);
     }
     return set;
-  }, [hovered, focusPath, links, typeFilter, nodes]);
+  }, [hovered, focusPath, linkMetas, typeFilter, nodeMetas]);
 
-  const isDimmed = (node: SimNode) => {
+  const isDimmed = (node: NodeMeta) => {
     if (typeFilter) return node.type !== typeFilter;
     return neighborIds ? !neighborIds.has(node.id) : false;
   };
@@ -263,22 +366,18 @@ export default function GraphView({
         </defs>
         <g transform={`translate(${view.x},${view.y}) scale(${view.k})`}>
           <g fill="none">
-            {links.map((l, i) => {
-              const s = nodeById.get(l.source);
-              const t = nodeById.get(l.target);
+            {linkMetas.map((l, i) => {
+              const s = nodeMetas.find((n) => n.id === l.source);
+              const t = nodeMetas.find((n) => n.id === l.target);
               if (!s || !t) return null;
               const dim = isDimmed(s) || isDimmed(t);
-              const dx = t.x - s.x;
-              const dy = t.y - s.y;
-              const dist = Math.hypot(dx, dy) || 1;
-              // Gentle arc so crossing edges stay visually distinguishable instead of a flat spiderweb.
-              const bow = Math.min(dist * 0.14, 26) * (l.source < l.target ? 1 : -1);
-              const mx = (s.x + t.x) / 2 - (dy / dist) * bow;
-              const my = (s.y + t.y) / 2 + (dx / dist) * bow;
               return (
                 <path
                   key={i}
-                  d={`M ${s.x} ${s.y} Q ${mx} ${my} ${t.x} ${t.y}`}
+                  ref={(el) => {
+                    if (el) linkElRefs.current.set(i, el);
+                    else linkElRefs.current.delete(i);
+                  }}
                   stroke={dim ? "var(--text-2)" : "var(--accent-dim)"}
                   strokeOpacity={dim ? 0.3 : 0.8}
                   strokeWidth={1.3 / view.k}
@@ -288,26 +387,27 @@ export default function GraphView({
             })}
           </g>
           <g>
-            {nodes.map((n) => {
+            {nodeMetas.map((n) => {
               const dim = isDimmed(n);
               const isFocus = n.id === focusPath;
               const isHovered = hovered === n.id;
-              const r = (isFocus ? 9.5 : isHovered ? 9 : 7) / view.k;
+              const baseR = radiusForDegree(n.degree);
+              const r = (isFocus ? baseR + 2.5 : isHovered ? baseR + 2 : baseR) / view.k;
               return (
                 <g
                   key={n.id}
-                  transform={`translate(${n.x},${n.y})`}
+                  ref={(el) => {
+                    if (el) nodeElRefs.current.set(n.id, el);
+                    else nodeElRefs.current.delete(n.id);
+                  }}
                   onMouseEnter={() => setHovered(n.id)}
                   onMouseLeave={() => setHovered(null)}
-                  onMouseDown={(e) => {
-                    e.stopPropagation();
-                    dragRef.current = { type: "node", id: n.id, startClientX: e.clientX, startClientY: e.clientY, moved: false };
-                  }}
+                  onMouseDown={(e) => startNodeDrag(e, n.id)}
                   className="cursor-pointer"
                   opacity={dim ? 0.45 : 1}
                   style={{ transition: "opacity 0.2s ease" }}
                 >
-                  <circle r={14 / view.k} fill="transparent" />
+                  <circle r={(baseR + 8) / view.k} fill="transparent" />
                   <circle
                     r={r}
                     fill={colorForType(n.type, vault.types)}
@@ -317,7 +417,7 @@ export default function GraphView({
                     style={{ transition: "r 0.15s ease" }}
                   />
                   <text
-                    x={13 / view.k}
+                    x={(baseR + 6) / view.k}
                     y={4 / view.k}
                     fontSize={12 / view.k}
                     fontWeight={isFocus || isHovered ? 600 : 500}
@@ -364,10 +464,10 @@ export default function GraphView({
 
       <div className="absolute top-4 right-4 flex items-center gap-2">
         <span className="text-[11px] text-[var(--text-2)] bg-[var(--bg-1)]/90 backdrop-blur-sm border border-[var(--border-soft)] rounded-full px-3 py-1.5">
-          {nodes.length} notes · {links.length} links
+          {nodeMetas.length} notes · {linkCount} links
         </span>
         <button
-          onClick={() => fitToView(nodesRef.current, size.width, size.height)}
+          onClick={() => fitToView(simNodesRef.current, size.width, size.height)}
           title="Fit to view"
           className="p-1.5 rounded-full bg-[var(--bg-1)]/90 backdrop-blur-sm border border-[var(--border-soft)] text-[var(--text-1)] hover:text-[var(--text-0)] transition-colors"
         >

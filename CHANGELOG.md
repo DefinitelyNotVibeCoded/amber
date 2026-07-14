@@ -2,6 +2,18 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.13.0 (2026-07-14)
+
+- The knowledge graph is alive now instead of a frozen snapshot. Previously
+  the layout ran once, froze, and dragging a node just moved that one node
+  in isolation. The simulation now keeps running: it settles into place
+  with a visible motion on load, and dragging any node reheats the whole
+  layout so connected neighbors ripple and resettle with it, the way
+  Obsidian's graph feels, without copying its look.
+- Nodes are now sized by how connected they are (backlinks in either
+  direction), so hub notes are visually obvious at a glance instead of
+  every node being the same size.
+
 ## 0.12.0 (2026-07-14)
 
 - Added an Obsidian import. Settings, General, Create new vault now has an
