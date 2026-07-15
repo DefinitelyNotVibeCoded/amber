@@ -1,8 +1,25 @@
 import fs from "fs";
 import path from "path";
+import MarkItDown from "markitdown-js";
 import { resolveInVault } from "./pathSafety";
 import { bodyTemplateForType } from "./noteTemplates";
-import { extOf } from "./attachments";
+import { extOf, isImageExt } from "./attachments";
+
+const markitdown = new MarkItDown();
+
+/** Best-effort text extraction for a newly attached file, never throws: a failed or
+ * unsupported conversion just means the note ships without extracted content, the
+ * attachment itself (already written to disk by the caller) is unaffected either way. */
+async function extractMarkdown(absPath: string, ext: string): Promise<string | null> {
+  if (isImageExt(ext)) return null; // already shown inline via the attachment preview
+  try {
+    const result = await markitdown.convert(absPath);
+    const text = result?.textContent?.trim();
+    return text ? text : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface CreateNoteParams {
   dir: string; // bundle-relative dir, e.g. "/concepts"
@@ -135,7 +152,7 @@ export interface CreateDocumentParams {
 }
 
 /** Copies an uploaded file into /attachments and creates a companion OKF note whose `resource` points to it. */
-export function createDocumentNote(root: string, params: CreateDocumentParams): { path: string; resourcePath: string } {
+export async function createDocumentNote(root: string, params: CreateDocumentParams): Promise<{ path: string; resourcePath: string }> {
   const { dir, type, title, description, tags, originalFilename, buffer } = params;
   if (!type) {
     throw new VaultOpError("type is required", 400);
@@ -155,6 +172,7 @@ export function createDocumentNote(root: string, params: CreateDocumentParams): 
   }
   fs.writeFileSync(attachmentAbs, buffer);
   const resourcePath = `/attachments/${attachmentFilename}`;
+  const extracted = await extractMarkdown(attachmentAbs, ext);
 
   const bundleDir = dir && dir.startsWith("/") ? dir : "/" + (dir || "");
   let noteFilename = `${baseSlug}.md`;
@@ -180,6 +198,8 @@ export function createDocumentNote(root: string, params: CreateDocumentParams): 
     "---",
     "",
     `# ${title || baseSlug}`,
+    "",
+    extracted ? "## Extracted content\n\n" + extracted : null,
     "",
   ].filter((l): l is string => l !== null);
 

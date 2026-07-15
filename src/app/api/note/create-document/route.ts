@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const root = getVaultPath();
   try {
     const buffer = Buffer.from(await file.arrayBuffer());
-    const result = createDocumentNote(root, {
+    const result = await createDocumentNote(root, {
       dir,
       type,
       title,

@@ -85,9 +85,13 @@ format open and the AI story first-class, and let the rest stay small.
 - **Note view**: OKF frontmatter (`type`, `description`, `resource`, `tags`,
   `timestamp`) rendered as a metadata card above the markdown, in-place
   editing that writes straight back to the `.md` file, no database
-- **Document attachments**: attach a PDF, image, or any file; it's copied
-  into the vault and wrapped in a real OKF note with YAML frontmatter, so it
-  shows up in the sidebar, graph, and query like any other note
+- **Document attachments**: attach a PDF, Word doc, spreadsheet, image, or
+  almost anything else; it's copied into the vault and wrapped in a real OKF
+  note with YAML frontmatter, so it shows up in the sidebar, graph, and query
+  like any other note. Its content is also extracted to real markdown right
+  in the note body (via [markitdown-js](https://github.com/Mirza-Glitch/markitdown-js),
+  see [Tech](#tech)), so the file is actually readable and searchable inside
+  Amber, not just an opaque attachment
 - **Knowledge graph**: canvas-rendered force layout, zoomable, draggable,
   colored by `type`, node size reflects how connected a note is relative to
   the rest of your vault, and stays smooth whether you have a dozen notes or
@@ -218,6 +222,12 @@ amber/
 Next.js (App Router) + TypeScript + Tailwind for the app, `gray-matter` +
 custom link resolution for OKF parsing, `d3-force` for the graph layout,
 `@modelcontextprotocol/sdk` for MCP, Electron for the desktop shell.
+
+Document-attachment content extraction runs on
+[markitdown-js](https://github.com/Mirza-Glitch/markitdown-js) by
+[Mirza-Glitch](https://github.com/Mirza-Glitch), a Node.js port of
+Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) - all
+credit to both for the format-conversion work that makes this possible.
 
 ## Contributing
 

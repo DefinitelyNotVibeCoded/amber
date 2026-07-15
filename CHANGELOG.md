@@ -2,6 +2,20 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.16.0 (2026-07-15)
+
+- Document attachments now get their content extracted to real markdown in
+  the note body, not just copied in as an opaque file. Uses
+  [markitdown-js](https://github.com/Mirza-Glitch/markitdown-js) by
+  Mirza-Glitch (a Node.js port of Microsoft's MarkItDown), covering PDFs,
+  Word docs, spreadsheets, presentations, HTML, and more. Extraction is
+  best-effort: an unsupported or malformed file just skips it, the
+  attachment itself is unaffected.
+- Marked `markitdown-js` as a server-external package in the Next.js config.
+  It transitively depends on `unzipper`, which has an optional, never-used
+  `require('@aws-sdk/client-s3')` for S3-backed streams that webpack was
+  statically resolving and failing the build on.
+
 ## 0.15.0 (2026-07-15)
 
 - Rebuilt the knowledge graph's rendering from SVG to canvas. The old
