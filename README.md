@@ -43,12 +43,15 @@ and one click from being reverted.
 
 <table>
 <tr>
-<td width="50%"><img src=".github/assets/screenshots/graph.png" alt="Interactive knowledge graph" width="100%"><p align="center"><sub><b>Knowledge graph</b>: force-directed, draggable, colored by type</sub></p></td>
-<td width="50%"><img src=".github/assets/screenshots/query.png" alt="Query view" width="100%"><p align="center"><sub><b>Query view</b>: filter, sort, and save views, no plugin needed</sub></p></td>
+<td width="50%"><img src=".github/assets/screenshots/graph.png" alt="Interactive knowledge graph, canvas-rendered, node size by connection count" width="100%"><p align="center"><sub><b>Knowledge graph</b>: canvas-rendered so it stays smooth from a handful of notes to thousands, nodes sized by how connected they are, clusters emerge from your real links</sub></p></td>
+<td width="50%"><img src=".github/assets/screenshots/agents.png" alt="Agents view showing live AI read and write activity" width="100%"><p align="center"><sub><b>Agents view</b>: watch an AI client read and write your vault live, a pulse traces the real path from your vault's entry point to whatever note it touched</sub></p></td>
 </tr>
 <tr>
+<td width="50%"><img src=".github/assets/screenshots/query.png" alt="Query view" width="100%"><p align="center"><sub><b>Query view</b>: filter, sort, and save views, no plugin needed</sub></p></td>
 <td width="50%"><img src=".github/assets/screenshots/command-palette.png" alt="Command palette" width="100%"><p align="center"><sub><b>Command palette</b>: <kbd>Ctrl</kbd>/<kbd>Cmd</kbd>+<kbd>K</kbd> to jump anywhere</sub></p></td>
-<td width="50%"><img src=".github/assets/screenshots/appearance.png" alt="Theme and reading customization" width="100%"><p align="center"><sub><b>Fully themeable</b>: presets, custom accent, font, and text size</sub></p></td>
+</tr>
+<tr>
+<td colspan="2"><img src=".github/assets/screenshots/appearance.png" alt="Theme and reading customization" width="100%"><p align="center"><sub><b>Fully themeable</b>: presets, custom accent, font, and text size</sub></p></td>
 </tr>
 </table>
 
@@ -85,8 +88,10 @@ format open and the AI story first-class, and let the rest stay small.
 - **Document attachments**: attach a PDF, image, or any file; it's copied
   into the vault and wrapped in a real OKF note with YAML frontmatter, so it
   shows up in the sidebar, graph, and query like any other note
-- **Knowledge graph**: force-directed, zoomable, draggable, colored by
-  `type`, with backlinks on every note
+- **Knowledge graph**: canvas-rendered force layout, zoomable, draggable,
+  colored by `type`, node size reflects how connected a note is relative to
+  the rest of your vault, and stays smooth whether you have a dozen notes or
+  several thousand
 - **Query view**: filter by `type`, `tags`, or any custom frontmatter field
   (auto-discovered), sort, save the view, no plugin, no API key
 - **Theming**: 5 presets plus a custom accent color, independent font,
@@ -98,9 +103,10 @@ format open and the AI story first-class, and let the rest stay small.
 - **Agent Activity Log**: every note an MCP client creates or edits is
   logged separately from your own edits, with a line diff and one-click
   revert
-- **Agents view**: a live, alive graph that shows how an agent is actually
-  using the vault, notes glow when an agent reads or writes them and fade
-  back to dormant, with a running feed of what happened and when
+- **Agents view**: the same live graph, dormant until an agent touches it,
+  a note glows when it's read or written and a pulse cascades along the
+  real path from your vault's entry point down to that note, with a
+  running feed of what happened and when
 
 ## Quick start
 

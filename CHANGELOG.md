@@ -2,6 +2,33 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.15.0 (2026-07-15)
+
+- Rebuilt the knowledge graph's rendering from SVG to canvas. The old
+  per-node DOM elements (each with its own drop-shadow filter) got
+  noticeably laggy once a vault had a few hundred notes; canvas draws
+  everything in one pass with no per-node DOM cost, so panning, zooming,
+  and dragging stay smooth regardless of vault size.
+- Retuned the physics to match how Obsidian's own graph actually works:
+  one plain link distance and repulsion force over the real link graph,
+  no synthetic per-folder clustering force. Clusters now emerge purely
+  from which notes actually link to each other, the way an organic vault
+  naturally reads, instead of being forced into artificial groupings.
+- Fixed node sizing: a note's radius is now scaled relative to the most-
+  connected note in your own vault, not a fixed link count. Previously,
+  once average connectivity passed about 4 links, nearly every node hit
+  the maximum size and looked the same; now the busiest hub always stands
+  out and the effect adapts automatically to how densely your vault links.
+- The Agents view now traces the real path an agent's activity takes
+  through your vault, not just the single note it touched. When a note is
+  read or written, the pulse cascades from your vault's entry point,
+  through whatever it actually links through, down to that note - found
+  by a plain shortest-path search over your real links, not assumed from
+  folder structure.
+- Category-holder labels (which cluster is which) now show in the Agents
+  view too, not just the regular Graph view - the same structural
+  information, so both views read the same way.
+
 ## 0.14.0 (2026-07-14)
 
 - Added an Agents view: a new toolbar tab (brain icon) that shows how and
