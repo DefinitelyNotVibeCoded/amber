@@ -6,6 +6,7 @@ import { isReservedFilename } from "../src/lib/okfClient";
 import { readNoteRaw, writeNoteRaw, createNote, VaultOpError } from "../src/lib/vaultOps";
 import { appendActivityLogEntry } from "../src/lib/activityLog";
 import { appendAgentPulse } from "../src/lib/agentPulse";
+import { semanticSearchByText } from "../src/lib/embeddings";
 
 function errorResult(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true as const };
@@ -111,6 +112,35 @@ export function createAmberServer(): McpServer {
         kind: "read",
         paths: results.map((r) => r.path),
         detail: query || type || tag || undefined,
+      });
+      return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
+    }
+  );
+
+  server.registerTool(
+    "semantic_search",
+    {
+      title: "Semantic search",
+      description:
+        "Find notes conceptually related to a query using embedding similarity, not keyword matching. Surfaces notes that discuss a topic without necessarily using its exact words. Slower on first call after edits (re-embeds changed notes), fast afterward. Prefer `search_notes` for exact term/tag/type lookups.",
+      inputSchema: z
+        .object({
+          query: z.string().describe("Natural-language description of what you're looking for"),
+          topK: z.number().int().min(1).max(50).optional().describe("Max results (default 8)"),
+        })
+        .strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async ({ query, topK }) => {
+      const root = getVaultPath();
+      const vault = loadVault(root);
+      const notes = vault.notes.filter((n) => !isReservedFilename(n.filename));
+      const results = await semanticSearchByText(root, notes, query, topK ?? 8);
+      appendAgentPulse(root, {
+        tool: "semantic_search",
+        kind: "read",
+        paths: results.map((r) => r.path),
+        detail: query,
       });
       return { content: [{ type: "text", text: JSON.stringify(results, null, 2) }] };
     }

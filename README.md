@@ -66,6 +66,7 @@ and one click from being reverted.
 | Audit trail for AI edits | Built-in Activity Log with diffs and one-click revert | None |
 | Watch AI activity happen | Built-in Agents view, notes light up live as agents read/write them | None |
 | Filter/sort your notes | Built-in Query view | Requires the Dataview plugin |
+| Find conceptually related notes | Built-in, local embedding search, no keyword match needed | Requires a community plugin (e.g. Smart Connections) |
 | Desktop app | Free for everyone, including commercial use | Free for personal use only |
 | Plugin ecosystem | A real [API](#plugin-api), no marketplace or ecosystem yet | Huge and mature |
 
@@ -98,6 +99,10 @@ format open and the AI story first-class, and let the rest stay small.
   several thousand
 - **Query view**: filter by `type`, `tags`, or any custom frontmatter field
   (auto-discovered), sort, save the view, no plugin, no API key
+- **Semantic search**: a "Related notes" panel on every note, ranked by
+  local embedding similarity, so it surfaces notes that discuss the same
+  thing without sharing a single keyword. Runs fully offline after the first
+  use (see [Tech](#tech)), no API key, no cloud call
 - **Theming**: 5 presets plus a custom accent color, independent font,
   text size, and note-width controls
 - **Native desktop app**: Electron, frameless window, its own taskbar icon,
@@ -180,13 +185,14 @@ Every client's exact config (JSON or YAML, file paths, and copy-paste code
 for the OpenAI SDKs) is generated live in **Settings → MCP Server** with real
 absolute paths for your machine, no manual editing required.
 
-### The 7 tools an agent gets
+### The 8 tools an agent gets
 
 | Tool | What it does |
 | --- | --- |
 | `get_vault_info` | Root path, note count, every `type` and tag in use |
 | `list_notes` | Every note's path, title, type, tags, and description |
 | `search_notes` | Free-text search plus exact `type`/`tag` filters |
+| `semantic_search` | Find conceptually related notes by embedding similarity, not keyword match |
 | `read_note` | Full raw markdown (frontmatter and body) of one note |
 | `get_backlinks` | Every note that links to a given note |
 | `write_note` | Overwrite an existing note's full content |
@@ -257,7 +263,7 @@ amber/
     http-server.ts       Streamable HTTP entry point (loopback only)
   electron/main.js      desktop window shell
   src/
-    lib/                 OKF parsing, vault read/write, config, activity log, diff, plugins
+    lib/                 OKF parsing, vault read/write, config, activity log, diff, plugins, embeddings
     hooks/                usePlugins and other client-side hooks
     app/                  Next.js pages + API routes
     components/           sidebar, note view, graph view, settings, activity log, editor
@@ -274,6 +280,15 @@ Document-attachment content extraction runs on
 [Mirza-Glitch](https://github.com/Mirza-Glitch), a Node.js port of
 Microsoft's [MarkItDown](https://github.com/microsoft/markitdown) - all
 credit to both for the format-conversion work that makes this possible.
+
+Semantic search runs a small local embedding model
+([`all-MiniLM-L6-v2`](https://huggingface.co/Xenova/all-MiniLM-L6-v2)) via
+[`@huggingface/transformers`](https://github.com/huggingface/transformers.js),
+entirely on your machine: no API key, no per-query network call. The model
+(~90MB) downloads once on first use and is cached at `~/.amber/models`,
+shared across every vault you open. Each note's embedding is cached in that
+vault's own `.amber/embeddings.json` and only recomputed when the note's
+content actually changes.
 
 ## Contributing
 

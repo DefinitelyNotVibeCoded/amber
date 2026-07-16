@@ -2,6 +2,20 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.18.0 (2026-07-16)
+
+- Added semantic search: every note now has a "Related notes" panel ranked
+  by embedding similarity, so it surfaces notes that discuss the same thing
+  without sharing a keyword. Backed by a new `semantic_search` MCP tool
+  (8 tools now, up from 7) for agents to use the same way. Runs a small
+  local model ([`all-MiniLM-L6-v2`](https://huggingface.co/Xenova/all-MiniLM-L6-v2)
+  via [`@huggingface/transformers`](https://github.com/huggingface/transformers.js))
+  entirely on-device: no API key, no per-query network call. The model
+  (~90MB) downloads once on first use to `~/.amber/models`, shared across
+  vaults; each note's embedding is cached in that vault's own
+  `.amber/embeddings.json` and only recomputed when the note's content
+  actually changes.
+
 ## 0.17.0 (2026-07-15)
 
 - Added a Plugin API. No marketplace, no install step, no build pipeline:

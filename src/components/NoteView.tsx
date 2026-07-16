@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Pencil, Save, X, ArrowUpRight } from "lucide-react";
+import { Pencil, Save, X, ArrowUpRight, Sparkles } from "lucide-react";
 import type { OkfNote, VaultData } from "@/lib/types";
+import type { SemanticResult } from "@/lib/embeddings";
 import { colorForType } from "@/lib/okfClient";
 import MarkdownBody from "./MarkdownBody";
 import AttachmentPreview from "./AttachmentPreview";
@@ -26,6 +27,8 @@ export default function NoteView({
   const [draft, setDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [loadingRaw, setLoadingRaw] = useState(false);
+  const [related, setRelated] = useState<SemanticResult[]>([]);
+  const [loadingRelated, setLoadingRelated] = useState(false);
 
   useEffect(() => {
     setEditing(false);
@@ -36,11 +39,35 @@ export default function NoteView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [note?.path]);
 
+  useEffect(() => {
+    if (!note) {
+      setRelated([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingRelated(true);
+    fetch(`/api/search/semantic?path=${encodeURIComponent(note.path)}&topK=6`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (!cancelled) setRelated(data.results ?? []);
+      })
+      .catch(() => {
+        if (!cancelled) setRelated([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingRelated(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [note?.path]);
+
   if (!note) {
     return <div className="flex-1 flex items-center justify-center text-[var(--text-2)]">No note selected.</div>;
   }
 
   const backlinkNotes = vault.notes.filter((n) => note.backlinks.includes(n.path));
+  const filteredRelated = related.filter((r) => !note.backlinks.includes(r.path));
   const hasType = Boolean(note.frontmatter.type);
   const typeColor = colorForType(note.frontmatter.type, vault.types);
 
@@ -180,6 +207,40 @@ export default function NoteView({
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {!editing && (loadingRelated || filteredRelated.length > 0) && (
+            <div className="mt-8 pt-6 border-t border-[var(--border-soft)]">
+              <h3 className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-2)] mb-3 flex items-center gap-1.5">
+                <Sparkles size={12} /> Related notes
+              </h3>
+              {loadingRelated && filteredRelated.length === 0 ? (
+                <p className="text-sm text-[var(--text-2)] px-2.5">Finding related notes…</p>
+              ) : (
+                <div className="flex flex-col gap-0.5 -mx-2.5">
+                  {filteredRelated.map((r) => (
+                    <button
+                      key={r.path}
+                      onClick={() => onNavigate(r.path)}
+                      className="flex items-center gap-1.5 text-left text-sm text-[var(--text-1)] hover:text-[var(--accent-bright)] hover:bg-[var(--bg-hover)] rounded-md px-2.5 py-1.5 transition-colors group"
+                    >
+                      <span
+                        className="w-1.5 h-1.5 rounded-full shrink-0"
+                        style={{ background: colorForType(r.type, vault.types) }}
+                      />
+                      {r.title}
+                      <span className="text-[10.5px] font-mono text-[var(--text-2)] ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+                        {Math.round(r.score * 100)}%
+                      </span>
+                      <ArrowUpRight
+                        size={12}
+                        className="opacity-0 group-hover:opacity-60 transition-opacity"
+                      />
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
