@@ -4,6 +4,7 @@ import MarkItDown from "markitdown-js";
 import { resolveInVault } from "./pathSafety";
 import { bodyTemplateForType } from "./noteTemplates";
 import { extOf, isImageExt } from "./attachments";
+import { loadVault } from "./okf";
 
 const markitdown = new MarkItDown();
 
@@ -79,7 +80,29 @@ export function deleteNote(root: string, notePath: string): void {
   fs.unlinkSync(abs);
 }
 
-/** Renames/moves a note within the vault. Does not rewrite links in other notes that pointed at the old path. */
+function splitFragment(raw: string): [string, string] {
+  const i = raw.indexOf("#");
+  return i < 0 ? [raw, ""] : [raw.slice(0, i), raw.slice(i + 1)];
+}
+
+/**
+ * Recomputes a link href that currently resolves to some old target so it resolves to `newTarget`
+ * from `linkerPath`, preserving the original bundle-relative ("/…") vs path-relative style and any
+ * #fragment.
+ */
+function rewriteHref(rawHref: string, linkerPath: string, newTarget: string): string {
+  const [base, fragment] = splitFragment(rawHref);
+  const frag = fragment ? "#" + fragment : "";
+  if (base.startsWith("/")) return newTarget + frag; // was absolute, keep it absolute
+  const linkerDir = path.posix.dirname(linkerPath);
+  return path.posix.relative(linkerDir, newTarget) + frag;
+}
+
+/**
+ * Renames/moves a note within the vault, keeping links intact: every other note that linked to the
+ * old path is rewritten to point at the new one, and if the note moved to a different directory its
+ * own relative outgoing links are rewritten so they still resolve to the same targets.
+ */
 export function renameNote(root: string, fromPath: string, toPath: string): { path: string } {
   const fromAbs = resolveInVault(root, fromPath);
   if (!fs.existsSync(fromAbs)) {
@@ -93,8 +116,45 @@ export function renameNote(root: string, fromPath: string, toPath: string): { pa
   if (fs.existsSync(toAbs)) {
     throw new VaultOpError("A note already exists at that path", 409);
   }
+
+  // Snapshot the link graph BEFORE moving, so we know who pointed at fromPath and where the moved
+  // note itself points.
+  const vault = loadVault(root);
+  const movedNote = vault.notes.find((n) => n.path === fromPath);
+
   fs.mkdirSync(path.dirname(toAbs), { recursive: true });
   fs.renameSync(fromAbs, toAbs);
+
+  // 1) Rewrite inbound links: every other note that linked to fromPath now points at toPath.
+  for (const note of vault.notes) {
+    if (note.path === fromPath) continue;
+    const rawsToTarget = new Set(note.links.filter((l) => l.target === fromPath).map((l) => l.raw));
+    if (rawsToTarget.size === 0) continue;
+    const abs = resolveInVault(root, note.path);
+    let content = fs.readFileSync(abs, "utf-8");
+    for (const raw of rawsToTarget) {
+      content = content.split(`](${raw})`).join(`](${rewriteHref(raw, note.path, toPath)})`);
+    }
+    fs.writeFileSync(abs, content, "utf-8");
+  }
+
+  // 2) If the note moved to a different directory, its own relative outgoing links would now resolve
+  //    from the new location, so rewrite them to keep pointing at the same targets. Absolute ("/…")
+  //    links are unaffected by the move.
+  if (movedNote && path.posix.dirname(fromPath) !== path.posix.dirname(toPath)) {
+    let content = fs.readFileSync(toAbs, "utf-8");
+    const seen = new Set<string>();
+    for (const link of movedNote.links) {
+      if (seen.has(link.raw)) continue;
+      seen.add(link.raw);
+      const [base] = splitFragment(link.raw);
+      if (base.startsWith("/")) continue; // absolute, still correct after the move
+      const newTarget = link.target === fromPath ? toPath : link.target; // handle self-links
+      content = content.split(`](${link.raw})`).join(`](${rewriteHref(link.raw, toPath, newTarget)})`);
+    }
+    fs.writeFileSync(toAbs, content, "utf-8");
+  }
+
   return { path: toPath };
 }
 

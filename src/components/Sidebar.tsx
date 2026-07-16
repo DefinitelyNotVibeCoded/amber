@@ -5,7 +5,7 @@ import type { VaultData } from "@/lib/types";
 import FileTree, { RowActions } from "./FileTree";
 import ContextMenu, { ContextMenuItem } from "./ContextMenu";
 import { colorForType, isReservedFilename } from "@/lib/okfClient";
-import { X, Pencil, Trash2, FolderOpen, FileSearch } from "lucide-react";
+import { X, Pencil, Trash2, FolderOpen, FileSearch, Undo2 } from "lucide-react";
 
 export default function Sidebar({
   vault,
@@ -65,6 +65,8 @@ export default function Sidebar({
   const [renamingPath, setRenamingPath] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [deletingPath, setDeletingPath] = useState<string | null>(null);
+  const [undo, setUndo] = useState<{ trashId: string; title: string } | null>(null);
+  const undoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const startRename = useCallback(
     (path: string) => {
@@ -110,6 +112,7 @@ export default function Sidebar({
 
   const commitDelete = useCallback(
     async (path: string) => {
+      const title = vault.notes.find((n) => n.path === path)?.title || path.split("/").pop() || "Note";
       try {
         const res = await fetch("/api/note/delete", {
           method: "POST",
@@ -117,8 +120,14 @@ export default function Sidebar({
           body: JSON.stringify({ path }),
         });
         if (res.ok) {
+          const data = await res.json().catch(() => ({}));
           setDeletingPath(null);
           onChanged({ deletedPath: path });
+          if (data.trashId) {
+            if (undoTimer.current) clearTimeout(undoTimer.current);
+            setUndo({ trashId: data.trashId, title });
+            undoTimer.current = setTimeout(() => setUndo(null), 8000);
+          }
         } else {
           const data = await res.json().catch(() => ({}));
           alert(data.error || "Delete failed.");
@@ -127,8 +136,30 @@ export default function Sidebar({
         alert("Delete failed.");
       }
     },
-    [onChanged]
+    [onChanged, vault.notes]
   );
+
+  const restoreDeleted = useCallback(async () => {
+    if (!undo) return;
+    if (undoTimer.current) clearTimeout(undoTimer.current);
+    const { trashId } = undo;
+    setUndo(null);
+    try {
+      const res = await fetch("/api/note/restore", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ trashId }),
+      });
+      if (res.ok) {
+        onChanged();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Restore failed.");
+      }
+    } catch {
+      alert("Restore failed.");
+    }
+  }, [undo, onChanged]);
 
   const openContextMenu = useCallback((e: React.MouseEvent, path: string) => {
     e.preventDefault();
@@ -338,6 +369,21 @@ export default function Sidebar({
           <FileTree tree={vault.tree} vault={vault} selectedPath={selectedPath} onSelect={onSelect} actions={rowActions} />
         )}
       </div>
+
+      {undo && (
+        <div className="mx-2.5 mb-2 flex items-center gap-2 px-2.5 py-2 rounded-[var(--radius-md)] bg-[var(--bg-2)] border border-[var(--border)] text-[12px] shadow-[var(--shadow-sm)]">
+          <Trash2 size={13} className="shrink-0 text-[var(--text-2)]" />
+          <span className="flex-1 min-w-0 truncate text-[var(--text-1)]">
+            Moved &ldquo;{undo.title}&rdquo; to trash
+          </span>
+          <button
+            onClick={restoreDeleted}
+            className="shrink-0 flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-[var(--accent-bright)] hover:bg-[var(--accent-soft)] transition-colors"
+          >
+            <Undo2 size={12} /> Undo
+          </button>
+        </div>
+      )}
 
       <div className="p-2.5 border-t border-[var(--border-soft)] text-[11px] text-[var(--text-2)] flex justify-between">
         <span>{vault.notes.filter((n) => !isReservedFilename(n.filename)).length} concepts</span>

@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import fs from "fs";
 import matter from "gray-matter";
 import { getVaultPath } from "@/lib/config";
-import { deleteNote, readNoteRaw, VaultOpError } from "@/lib/vaultOps";
+import { readNoteRaw, VaultOpError } from "@/lib/vaultOps";
+import { moveToTrash } from "@/lib/trash";
 import { loadVault } from "@/lib/okf";
-import { resolveInVault } from "@/lib/pathSafety";
 import { isLocalResource } from "@/lib/attachments";
 
 export async function POST(req: NextRequest) {
@@ -15,23 +14,27 @@ export async function POST(req: NextRequest) {
   const root = getVaultPath();
   try {
     let resource: string | undefined;
+    let title: string | undefined;
     try {
-      resource = (matter(readNoteRaw(root, notePath)).data || {}).resource;
+      const parsed = matter(readNoteRaw(root, notePath));
+      resource = (parsed.data || {}).resource;
+      title = (parsed.data || {}).title;
     } catch {
-      // note unreadable or already gone; nothing to clean up
+      // note unreadable or already gone; nothing extra to clean up
     }
 
-    deleteNote(root, notePath);
-
+    // Include the note's attachment in the same trash entry if nothing else references it, so a
+    // restore brings the note and its file back together.
+    const files = [notePath];
     if (resource && isLocalResource(resource)) {
-      const stillReferenced = loadVault(root).notes.some((n) => n.frontmatter.resource === resource);
-      if (!stillReferenced) {
-        const attachmentAbs = resolveInVault(root, resource);
-        if (fs.existsSync(attachmentAbs)) fs.unlinkSync(attachmentAbs);
-      }
+      const stillReferenced = loadVault(root).notes.some(
+        (n) => n.path !== notePath && n.frontmatter.resource === resource
+      );
+      if (!stillReferenced) files.push(resource);
     }
 
-    return NextResponse.json({ ok: true });
+    const entry = moveToTrash(root, files, { title });
+    return NextResponse.json({ ok: true, trashId: entry.id });
   } catch (e) {
     const status = e instanceof VaultOpError ? e.status : 400;
     const message = e instanceof Error ? e.message : String(e);

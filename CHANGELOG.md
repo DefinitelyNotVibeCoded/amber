@@ -2,6 +2,17 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.19.0 (2026-07-16)
+
+- Renaming a note now keeps links intact. Previously it moved the file but left every other note that
+  linked to it pointing at the old path, silently breaking backlinks. Now every inbound link is
+  rewritten to the new path (preserving bundle-relative vs path-relative style and any #fragment), and
+  if the note moves to a different directory its own relative outgoing links are rewritten too.
+- Deleting a note is no longer permanent. Instead of an unrecoverable `unlink`, the note (and its
+  attachment, if nothing else references it) moves to `.amber/trash` as a single restorable entry, and
+  the sidebar shows an "Undo" banner right after. Restores refuse to clobber a newer note at the same
+  path.
+
 ## 0.18.0 (2026-07-16)
 
 - Added semantic search: every note now has a "Related notes" panel ranked

@@ -129,17 +129,19 @@ export default function App() {
     else localStorage.removeItem(THEME_ACCENT_KEY);
   }, []);
 
-  const reload = useCallback(async () => {
-    setLoading(true);
+  // `silent` refreshes the vault in place without flipping the full-screen loading state, which would
+  // unmount the app tree (and reset children's local state, e.g. the sidebar's undo banner).
+  const reload = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true);
     try {
       const res = await fetch("/api/vault");
       const data = (await res.json()) as VaultData;
       setVault(data);
       setError(null);
     } catch {
-      setError("Could not load vault.");
+      if (!silent) setError("Could not load vault.");
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   }, []);
 
@@ -190,7 +192,7 @@ export default function App() {
 
   const handleSidebarChanged = useCallback(
     async (opts?: { deletedPath?: string; renamedTo?: string }) => {
-      await reload();
+      await reload(true);
       if (opts?.renamedTo) {
         setSelectedPath(opts.renamedTo);
       } else if (opts?.deletedPath && opts.deletedPath === selectedPath) {
