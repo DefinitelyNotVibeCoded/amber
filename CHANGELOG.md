@@ -2,6 +2,22 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.17.0 (2026-07-15)
+
+- Added a Plugin API. No marketplace, no install step, no build pipeline:
+  drop a `.js` file into `<vault>/.amber/plugins/`, reload, and it runs.
+  A plugin exports a default object with an `onload(ctx)`; `ctx` gives it
+  `registerCommand()` (adds an entry to the command palette),
+  `vault.listNotes()` / `.searchNotes()` / `.readNote()` / `.getBacklinks()`
+  (the same live vault data the app itself uses), `onNoteOpen()`, and
+  `showNotice()`. Manage installed plugins from **Settings → Plugins**
+  (enable/disable, reveal the plugins folder). Plugins run in the browser
+  alongside the rest of the app, not in Node, so they only ever reach your
+  vault through this same API, never the raw filesystem - the same trust
+  model as any other plugin ecosystem, just with a narrower blast radius by
+  construction. A full working example ships at
+  `examples/plugins/word-count.js`.
+
 ## 0.16.0 (2026-07-15)
 
 - Document attachments now get their content extracted to real markdown in

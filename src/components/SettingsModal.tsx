@@ -1,13 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { X, Settings as SettingsIcon, FolderCog, Plug, Info, Copy, Check, ExternalLink, FolderPlus, Palette, RotateCcw } from "lucide-react";
+import { X, Settings as SettingsIcon, FolderCog, Plug, Info, Copy, Check, ExternalLink, FolderPlus, Palette, RotateCcw, Puzzle, FolderOpen } from "lucide-react";
 import Logo from "./Logo";
 import NewVaultModal from "./NewVaultModal";
 import { THEME_PRESETS, getThemeBase } from "@/lib/themes";
 import type { ReadingFont, ReadingSize, ContentWidth } from "./App";
 
-type Tab = "general" | "appearance" | "mcp" | "about";
+type Tab = "general" | "appearance" | "mcp" | "plugins" | "about";
+
+interface PluginFileInfo {
+  filename: string;
+  enabled: boolean;
+}
 
 interface StdioConnector {
   label: string;
@@ -169,6 +174,9 @@ export default function SettingsModal({
   const [connector, setConnector] = useState<string>("claudeDesktop");
   const [transport, setTransport] = useState<"local" | "remote">("local");
   const [showNewVault, setShowNewVault] = useState(false);
+  const [plugins, setPlugins] = useState<PluginFileInfo[]>([]);
+  const [pluginsDir, setPluginsDir] = useState<string>("");
+  const [pluginsLoaded, setPluginsLoaded] = useState(false);
 
   useEffect(() => {
     fetch("/api/version")
@@ -179,7 +187,25 @@ export default function SettingsModal({
       .then((r) => r.json())
       .then(setMcpConfig)
       .catch(() => {});
+    fetch("/api/plugins")
+      .then((r) => r.json())
+      .then((d) => {
+        setPlugins(d.plugins || []);
+        setPluginsDir(d.pluginsDir || "");
+      })
+      .catch(() => {})
+      .finally(() => setPluginsLoaded(true));
   }, []);
+
+  async function togglePlugin(filename: string, enabled: boolean) {
+    setPlugins((prev) => prev.map((p) => (p.filename === filename ? { ...p, enabled } : p)));
+    await fetch("/api/plugins/toggle", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename, enabled }),
+    });
+    window.location.reload();
+  }
 
   async function submit() {
     setSaving(true);
@@ -225,6 +251,7 @@ export default function SettingsModal({
             label="Appearance"
           />
           <NavButton active={tab === "mcp"} onClick={() => setTab("mcp")} icon={<Plug size={14} />} label="MCP Server" />
+          <NavButton active={tab === "plugins"} onClick={() => setTab("plugins")} icon={<Puzzle size={14} />} label="Plugins" />
           <NavButton active={tab === "about"} onClick={() => setTab("about")} icon={<Info size={14} />} label="About" />
         </div>
 
@@ -478,6 +505,70 @@ export default function SettingsModal({
                         {httpConnector.note}
                       </p>
                     )}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {tab === "plugins" && (
+              <div className="flex flex-col gap-4 max-w-[480px]">
+                <div>
+                  <h3 className="text-[14px] font-semibold mb-1">Plugins</h3>
+                  <p className="text-[12.5px] text-[var(--text-2)]">
+                    No marketplace yet, drop a <code className="font-mono">.js</code> file into the folder below and
+                    reload. Plugins run with the same access the app itself has to your vault, only install ones you
+                    trust. See the{" "}
+                    <a
+                      href="https://github.com/DefinitelyNotVibeCoded/amber#plugin-api"
+                      target="_blank"
+                      rel="noreferrer"
+                      className="external-link"
+                    >
+                      Plugin API docs
+                    </a>
+                    .
+                  </p>
+                </div>
+
+                {pluginsDir && (
+                  <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-[var(--radius-sm)] bg-[var(--bg-2)] border border-[var(--border-soft)]">
+                    <span className="flex-1 min-w-0 font-mono text-[11.5px] text-[var(--text-1)] truncate">{pluginsDir}</span>
+                    {typeof window !== "undefined" && window.amber && (
+                      <button
+                        onClick={() => window.amber?.revealInFolder(pluginsDir)}
+                        className="shrink-0 flex items-center gap-1 text-[11.5px] text-[var(--text-1)] hover:text-[var(--text-0)]"
+                      >
+                        <FolderOpen size={12} /> Reveal
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {pluginsLoaded && plugins.length === 0 && (
+                  <p className="text-[12px] text-[var(--text-2)]">No plugins found in that folder yet.</p>
+                )}
+
+                {plugins.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    {plugins.map((p) => (
+                      <label
+                        key={p.filename}
+                        className="flex items-center gap-2.5 px-2.5 py-2 rounded-[var(--radius-sm)] border border-[var(--border-soft)] bg-[var(--bg-2)] cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={p.enabled}
+                          onChange={(e) => togglePlugin(p.filename, e.target.checked)}
+                          className="accent-[var(--accent)]"
+                        />
+                        <span className="flex-1 min-w-0 font-mono text-[12.5px] text-[var(--text-0)] truncate">
+                          {p.filename}
+                        </span>
+                        <span className="shrink-0 text-[11px] text-[var(--text-2)]">
+                          {p.enabled ? "Enabled" : "Disabled"}
+                        </span>
+                      </label>
+                    ))}
                   </div>
                 )}
               </div>

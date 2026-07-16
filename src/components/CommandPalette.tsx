@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { FileText, Waypoints, Table2, Settings, History, FilePlus, Paperclip, Brain } from "lucide-react";
+import { FileText, Waypoints, Table2, Settings, History, FilePlus, Paperclip, Brain, Puzzle } from "lucide-react";
 import type { VaultData } from "@/lib/types";
 import type { ViewMode } from "./App";
 import { colorForType, isReservedFilename } from "@/lib/okfClient";
+import type { PluginCommand } from "@/lib/pluginHost";
 
 interface PaletteItem {
   id: string;
@@ -24,6 +25,7 @@ export default function CommandPalette({
   onAddDocument,
   onOpenSettings,
   onOpenActivityLog,
+  pluginCommands = [],
 }: {
   vault: VaultData;
   onClose: () => void;
@@ -33,6 +35,7 @@ export default function CommandPalette({
   onAddDocument: () => void;
   onOpenSettings: () => void;
   onOpenActivityLog: () => void;
+  pluginCommands?: PluginCommand[];
 }) {
   const [query, setQuery] = useState("");
   const [activeIndex, setActiveIndex] = useState(0);
@@ -110,7 +113,19 @@ export default function CommandPalette({
     [vault, onSelect]
   );
 
-  const allItems = useMemo(() => [...actionItems, ...noteItems], [actionItems, noteItems]);
+  const pluginItems: PaletteItem[] = useMemo(
+    () =>
+      pluginCommands.map((cmd) => ({
+        id: `plugin-${cmd.id}`,
+        label: cmd.label,
+        icon: <Puzzle size={14} />,
+        onRun: cmd.run,
+        keywords: `plugin ${cmd.keywords || ""}`,
+      })),
+    [pluginCommands]
+  );
+
+  const allItems = useMemo(() => [...actionItems, ...pluginItems, ...noteItems], [actionItems, pluginItems, noteItems]);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();

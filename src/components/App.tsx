@@ -14,6 +14,8 @@ import SettingsModal from "./SettingsModal";
 import ActivityLogPanel from "./ActivityLogPanel";
 import QueryView from "./QueryView";
 import CommandPalette from "./CommandPalette";
+import PluginNotices from "./PluginNotices";
+import { usePlugins } from "@/hooks/usePlugins";
 
 const THEME_PRESET_KEY = "amber-theme-preset";
 const THEME_ACCENT_KEY = "amber-theme-accent";
@@ -164,10 +166,16 @@ export default function App() {
     [vault, selectedPath]
   );
 
-  const handleSelect = useCallback((path: string) => {
-    setSelectedPath(path);
-    setView("note");
-  }, []);
+  const { commands: pluginCommands, notices: pluginNotices, dismissNotice, notifyNoteOpen } = usePlugins(vault);
+
+  const handleSelect = useCallback(
+    (path: string) => {
+      setSelectedPath(path);
+      setView("note");
+      notifyNoteOpen(path);
+    },
+    [notifyNoteOpen]
+  );
 
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
@@ -335,8 +343,11 @@ export default function App() {
           onAddDocument={() => setShowAddDocument(true)}
           onOpenSettings={() => setShowSettings(true)}
           onOpenActivityLog={() => setShowActivityLog(true)}
+          pluginCommands={pluginCommands}
         />
       )}
+
+      <PluginNotices notices={pluginNotices} onDismiss={dismissNotice} />
     </div>
   );
 }

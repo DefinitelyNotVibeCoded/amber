@@ -67,7 +67,7 @@ and one click from being reverted.
 | Watch AI activity happen | Built-in Agents view, notes light up live as agents read/write them | None |
 | Filter/sort your notes | Built-in Query view | Requires the Dataview plugin |
 | Desktop app | Free for everyone, including commercial use | Free for personal use only |
-| Plugin ecosystem | Small and young | Huge and mature |
+| Plugin ecosystem | A real [API](#plugin-api), no marketplace or ecosystem yet | Huge and mature |
 
 Amber isn't trying to out-plugin Obsidian. It's a different bet: keep the
 format open and the AI story first-class, and let the rest stay small.
@@ -111,6 +111,9 @@ format open and the AI story first-class, and let the rest stay small.
   a note glows when it's read or written and a pulse cascades along the
   real path from your vault's entry point down to that note, with a
   running feed of what happened and when
+- **Plugin API**: drop a `.js` file into `.amber/plugins/`, no marketplace,
+  no build step, register commands and hook into note-open, backed by the
+  same vault data the app itself uses (see [Plugin API](#plugin-api))
 
 ## Quick start
 
@@ -201,18 +204,61 @@ and by which tool, with a line-level diff and a one-click revert. Open it
 from the history icon in the toolbar, it shows a dot when there's something
 to review.
 
+## Plugin API
+
+Amber has no plugin marketplace, no install step, and no build pipeline for
+plugins: drop a `.js` file into `<your-vault>/.amber/plugins/`, reload, and
+it runs. Manage installed plugins (enable, disable, find the folder) from
+**Settings → Plugins**.
+
+A plugin is a default export with an `onload(ctx)`:
+
+```js
+export default {
+  name: "Word Count",
+  onload(ctx) {
+    ctx.registerCommand({
+      id: "hello",
+      label: "Say hello",
+      run: () => ctx.showNotice("Hello from a plugin!"),
+    });
+  },
+};
+```
+
+`ctx` gives a plugin:
+
+| | |
+| --- | --- |
+| `registerCommand({id, label, keywords?, run})` | Adds an entry to the command palette (`Ctrl`/`Cmd`+`K`) |
+| `vault.listNotes()` / `.searchNotes(query)` | All notes, or a free-text filtered subset |
+| `vault.readNote(path)` / `.getBacklinks(path)` | One note's full data, or just its backlink paths |
+| `onNoteOpen(callback)` | Fires with a note's path whenever you open it |
+| `showNotice(message)` | A toast in the bottom-right corner |
+
+A full working example (the snippet above, with real note data) is in
+[`examples/plugins/word-count.js`](examples/plugins/word-count.js).
+
+Plugins run in the browser context alongside the rest of the app, not in
+Node, so they can only reach your vault through this same `ctx.vault` API,
+never the raw filesystem. That said, they do have the same access the app
+itself has: only install plugins you trust, the same rule as any other
+plugin ecosystem.
+
 ## Project structure
 
 ```
 amber/
   vault/              sample OKF bundle (swap for your own via Settings)
+  examples/plugins/    reference plugin(s), copy into a vault's .amber/plugins/
   mcp/
     tools.ts           the 7 tool definitions, shared by both transports
     server.ts           stdio entry point
     http-server.ts       Streamable HTTP entry point (loopback only)
   electron/main.js      desktop window shell
   src/
-    lib/                 OKF parsing, vault read/write, config, activity log, diff
+    lib/                 OKF parsing, vault read/write, config, activity log, diff, plugins
+    hooks/                usePlugins and other client-side hooks
     app/                  Next.js pages + API routes
     components/           sidebar, note view, graph view, settings, activity log, editor
 ```
