@@ -2,6 +2,16 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.20.0 (2026-07-17)
+
+- Added user-definable note templates. Templates are editable markdown files in
+  `.amber/templates/*.md` (seeded with a starter set on first use), with
+  `{{title}}`, `{{type}}`, `{{date}}`, and `{{time}}` variables. The New Note dialog
+  now has a template picker, and creating a note from a template fills its body from
+  that shared shape. Agents get the same thing over MCP: a new `list_templates` tool
+  plus an optional `template` argument on `create_note`, so AI-written notes follow
+  the same conventions as your own.
+
 ## 0.19.0 (2026-07-16)
 
 - Renaming a note now keeps links intact. Previously it moved the file but left every other note that

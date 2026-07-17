@@ -5,6 +5,7 @@ import { resolveInVault } from "./pathSafety";
 import { bodyTemplateForType } from "./noteTemplates";
 import { extOf, isImageExt } from "./attachments";
 import { loadVault } from "./okf";
+import { readTemplateBody, applyTemplateVars } from "./userTemplates";
 
 const markitdown = new MarkItDown();
 
@@ -30,6 +31,7 @@ export interface CreateNoteParams {
   description?: string;
   resource?: string;
   tags?: string[];
+  template?: string; // optional .amber/templates/*.md filename; overrides the built-in per-type body
 }
 
 export class VaultOpError extends Error {
@@ -159,7 +161,7 @@ export function renameNote(root: string, fromPath: string, toPath: string): { pa
 }
 
 export function createNote(root: string, params: CreateNoteParams): { path: string } {
-  const { dir, type, title, description, resource, tags } = params;
+  const { dir, type, title, description, resource, tags, template } = params;
   let filename = params.filename?.trim();
 
   if (!type) {
@@ -182,19 +184,24 @@ export function createNote(root: string, params: CreateNoteParams): { path: stri
   }
   fs.mkdirSync(path.dirname(abs), { recursive: true });
 
+  const resolvedTitle = title || filename.replace(/\.md$/, "");
+  const templateBody = template ? readTemplateBody(root, template) : null;
+  const body =
+    templateBody !== null ? applyTemplateVars(templateBody, { title: resolvedTitle, type }) : bodyTemplateForType(type);
+
   const frontmatterLines = [
     "---",
     `type: ${type}`,
-    `title: "${(title || filename.replace(/\.md$/, "")).replace(/"/g, '\\"')}"`,
+    `title: "${resolvedTitle.replace(/"/g, '\\"')}"`,
     description ? `description: "${description.replace(/"/g, '\\"')}"` : null,
     resource ? `resource: ${resource}` : null,
     tags && tags.length ? `tags: [${tags.join(", ")}]` : null,
     `timestamp: ${new Date().toISOString()}`,
     "---",
     "",
-    `# ${title || filename.replace(/\.md$/, "")}`,
+    `# ${resolvedTitle}`,
     "",
-    bodyTemplateForType(type),
+    body,
   ].filter((l): l is string => l !== null);
 
   fs.writeFileSync(abs, frontmatterLines.join("\n"), "utf-8");

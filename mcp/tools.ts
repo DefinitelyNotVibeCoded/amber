@@ -7,6 +7,7 @@ import { readNoteRaw, writeNoteRaw, createNote, VaultOpError } from "../src/lib/
 import { appendActivityLogEntry } from "../src/lib/activityLog";
 import { appendAgentPulse } from "../src/lib/agentPulse";
 import { semanticSearchByText } from "../src/lib/embeddings";
+import { listTemplates } from "../src/lib/userTemplates";
 
 function errorResult(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true as const };
@@ -221,11 +222,27 @@ export function createAmberServer(): McpServer {
   );
 
   server.registerTool(
+    "list_templates",
+    {
+      title: "List note templates",
+      description:
+        "List the vault's note-body templates (shared shapes for new notes, e.g. meeting, decision). Pass a returned filename as `template` to create_note to start a note from that shape, so agent-written notes stay consistent with the vault's conventions.",
+      inputSchema: z.object({}).strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async () => {
+      const root = getVaultPath();
+      const templates = listTemplates(root).map((t) => ({ template: t.filename, name: t.name }));
+      return { content: [{ type: "text", text: JSON.stringify(templates, null, 2) }] };
+    }
+  );
+
+  server.registerTool(
     "create_note",
     {
       title: "Create note",
       description:
-        "Create a new OKF-conformant note. Only `type` is required per the OKF spec; `title`/`description`/`tags`/`resource` are recommended. Fails if the target file already exists.",
+        "Create a new OKF-conformant note. Only `type` is required per the OKF spec; `title`/`description`/`tags`/`resource` are recommended. Optionally pass a `template` (see list_templates) to start the body from a shared shape. Fails if the target file already exists.",
       inputSchema: z
         .object({
           dir: z.string().describe("Bundle-relative folder, e.g. /concepts"),
@@ -235,6 +252,10 @@ export function createAmberServer(): McpServer {
           description: z.string().optional(),
           resource: z.string().optional().describe("URI uniquely identifying the underlying asset"),
           tags: z.array(z.string()).optional(),
+          template: z
+            .string()
+            .optional()
+            .describe("Optional template filename from list_templates, e.g. meeting.md; fills the note body"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },

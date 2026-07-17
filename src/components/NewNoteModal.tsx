@@ -1,10 +1,15 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { X, FilePlus2, ChevronRight, Check } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { X, FilePlus2, ChevronRight, Check, FolderOpen } from "lucide-react";
 import type { VaultData } from "@/lib/types";
 import { colorForType } from "@/lib/okfClient";
 import { folderForType } from "@/lib/noteTemplates";
+
+interface TemplateInfo {
+  filename: string;
+  name: string;
+}
 
 const inputCls =
   "bg-[var(--bg-2)] border border-[var(--border-soft)] rounded-[var(--radius-sm)] px-2.5 py-1.5 outline-none focus:border-[var(--accent-dim)] transition-colors text-[var(--text-0)] placeholder:text-[var(--text-2)]";
@@ -29,6 +34,19 @@ export default function NewNoteModal({
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [templates, setTemplates] = useState<TemplateInfo[]>([]);
+  const [templatesDir, setTemplatesDir] = useState<string>("");
+  const [template, setTemplate] = useState<string>(""); // "" = type default
+
+  useEffect(() => {
+    fetch("/api/note-templates")
+      .then((r) => r.json())
+      .then((d) => {
+        setTemplates(d.templates ?? []);
+        setTemplatesDir(d.dir ?? "");
+      })
+      .catch(() => {});
+  }, []);
 
   const typeOptions = useMemo(() => vault.types, [vault.types]);
 
@@ -59,6 +77,7 @@ export default function NewNoteModal({
             .split(",")
             .map((t) => t.trim())
             .filter(Boolean),
+          template: template || undefined,
         }),
       });
       const data = await res.json();
@@ -154,6 +173,50 @@ export default function NewNoteModal({
                 autoFocus
               />
             )}
+          </div>
+
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[var(--text-1)] text-[11.5px] font-medium">Template</span>
+              {templatesDir && typeof window !== "undefined" && window.amber && (
+                <button
+                  onClick={() => window.amber?.revealInFolder(templatesDir)}
+                  className="flex items-center gap-1 text-[10.5px] text-[var(--text-2)] hover:text-[var(--text-0)] transition-colors"
+                  title="Templates are editable markdown files in .amber/templates"
+                >
+                  <FolderOpen size={11} /> Edit templates
+                </button>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                onClick={() => setTemplate("")}
+                className={`px-2.5 py-1 rounded-full text-[12px] font-medium border transition-colors ${
+                  template === ""
+                    ? "border-[var(--accent)] text-[var(--accent-bright)] bg-[var(--accent-soft)]"
+                    : "border-[var(--border-soft)] text-[var(--text-1)] bg-[var(--bg-2)] hover:text-[var(--text-0)]"
+                }`}
+              >
+                Type default
+              </button>
+              {templates.map((t) => {
+                const active = template === t.filename;
+                return (
+                  <button
+                    key={t.filename}
+                    onClick={() => setTemplate(t.filename)}
+                    className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12px] font-medium border transition-colors ${
+                      active
+                        ? "border-[var(--accent)] text-[var(--accent-bright)] bg-[var(--accent-soft)]"
+                        : "border-[var(--border-soft)] text-[var(--text-1)] bg-[var(--bg-2)] hover:text-[var(--text-0)]"
+                    }`}
+                  >
+                    {t.name}
+                    {active && <Check size={11} />}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           {error && <div className="text-xs text-[var(--danger)]">{error}</div>}
