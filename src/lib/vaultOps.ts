@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import crypto from "crypto";
 import MarkItDown from "markitdown-js";
 import { resolveInVault } from "./pathSafety";
 import { bodyTemplateForType } from "./noteTemplates";
@@ -60,10 +61,30 @@ export function readNoteRaw(root: string, notePath: string): string {
   return fs.readFileSync(abs, "utf-8");
 }
 
-export function writeNoteRaw(root: string, notePath: string, content: string): void {
+/** Content-hash version token used for optimistic concurrency on writes. */
+export function versionOf(content: string): string {
+  return crypto.createHash("sha1").update(content, "utf-8").digest("hex");
+}
+
+/**
+ * Overwrites a note's raw content, returning the new version. If `expectedVersion` is given and the
+ * file on disk no longer matches it, the write is rejected with a 409 instead of silently clobbering
+ * a change made since the caller last read the note (e.g. an agent write landing mid-edit).
+ */
+export function writeNoteRaw(root: string, notePath: string, content: string, expectedVersion?: string): string {
   const abs = resolveInVault(root, notePath);
+  if (expectedVersion !== undefined && fs.existsSync(abs)) {
+    const current = versionOf(fs.readFileSync(abs, "utf-8"));
+    if (current !== expectedVersion) {
+      throw new VaultOpError(
+        "This note changed since it was read; re-read it and reapply the change to avoid overwriting.",
+        409
+      );
+    }
+  }
   fs.mkdirSync(path.dirname(abs), { recursive: true });
   fs.writeFileSync(abs, content, "utf-8");
+  return versionOf(content);
 }
 
 export function noteExists(root: string, notePath: string): boolean {

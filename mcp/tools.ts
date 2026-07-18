@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getVaultPath } from "../src/lib/config";
 import { loadVault } from "../src/lib/okf";
 import { isReservedFilename } from "../src/lib/okfClient";
-import { readNoteRaw, writeNoteRaw, createNote, VaultOpError } from "../src/lib/vaultOps";
+import { readNoteRaw, writeNoteRaw, createNote, versionOf, VaultOpError } from "../src/lib/vaultOps";
 import { appendActivityLogEntry } from "../src/lib/activityLog";
 import { appendAgentPulse } from "../src/lib/agentPulse";
 import { semanticSearchByText } from "../src/lib/embeddings";
@@ -151,7 +151,8 @@ export function createAmberServer(): McpServer {
     "read_note",
     {
       title: "Read note",
-      description: "Read the full raw markdown (frontmatter + body) of one note by its bundle-relative path, e.g. /concepts/okf.md.",
+      description:
+        "Read one note by its bundle-relative path (e.g. /concepts/okf.md). Returns JSON { path, version, content } where content is the full raw markdown (frontmatter + body). Pass the returned version as base_version to write_note for a conflict-checked write that won't overwrite a change made since you read.",
       inputSchema: z.object({ path: z.string().describe("Bundle-relative path, e.g. /concepts/okf.md") }).strict(),
       annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
     },
@@ -160,7 +161,7 @@ export function createAmberServer(): McpServer {
       try {
         const content = readNoteRaw(root, path);
         appendAgentPulse(root, { tool: "read_note", kind: "read", paths: [path] });
-        return { content: [{ type: "text", text: content }] };
+        return { content: [{ type: "text", text: JSON.stringify({ path, version: versionOf(content), content }, null, 2) }] };
       } catch (e) {
         return errorResult(e instanceof Error ? e.message : String(e));
       }
@@ -193,16 +194,20 @@ export function createAmberServer(): McpServer {
     {
       title: "Write note",
       description:
-        "Overwrite an existing note's full raw content (frontmatter + body) by bundle-relative path. Pass the complete file content, not a diff. Use read_note first to get the current content to edit.",
+        "Overwrite an existing note's full raw content (frontmatter + body) by bundle-relative path. Pass the complete file content, not a diff. Use read_note first to get the current content and its version. Pass that version as base_version so the write is rejected (rather than clobbering) if the note changed since you read it.",
       inputSchema: z
         .object({
           path: z.string().describe("Bundle-relative path of an existing note, e.g. /concepts/okf.md"),
           content: z.string().describe("Full replacement file content, including the --- frontmatter block --- and body"),
+          base_version: z
+            .string()
+            .optional()
+            .describe("The version returned by read_note; if set and the note has since changed, the write is rejected"),
         })
         .strict(),
       annotations: { readOnlyHint: false, destructiveHint: true, idempotentHint: true, openWorldHint: false },
     },
-    async ({ path, content }) => {
+    async ({ path, content, base_version }) => {
       const root = getVaultPath();
       try {
         let before: string | null = null;
@@ -211,7 +216,7 @@ export function createAmberServer(): McpServer {
         } catch {
           before = null;
         }
-        writeNoteRaw(root, path, content);
+        writeNoteRaw(root, path, content, base_version);
         appendActivityLogEntry(root, { tool: "write_note", path, before, after: content });
         appendAgentPulse(root, { tool: "write_note", kind: "write", paths: [path] });
         return { content: [{ type: "text", text: `Saved ${path}` }] };

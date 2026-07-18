@@ -25,6 +25,7 @@ export default function NoteView({
 }) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [baseVersion, setBaseVersion] = useState<string | undefined>(undefined);
   const [saving, setSaving] = useState(false);
   const [loadingRaw, setLoadingRaw] = useState(false);
   const [related, setRelated] = useState<SemanticResult[]>([]);
@@ -77,6 +78,7 @@ export default function NoteView({
       const res = await fetch(`/api/note?path=${encodeURIComponent(note!.path)}`);
       const data = await res.json();
       setDraft(data.content ?? "");
+      setBaseVersion(data.version);
       setEditing(true);
     } finally {
       setLoadingRaw(false);
@@ -86,11 +88,24 @@ export default function NoteView({
   async function save() {
     setSaving(true);
     try {
-      await fetch("/api/note", {
+      const res = await fetch("/api/note", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ path: note!.path, content: draft }),
+        body: JSON.stringify({ path: note!.path, content: draft, baseVersion }),
       });
+      if (res.status === 409) {
+        alert(
+          "This note changed since you started editing it (likely an agent wrote to it). Your text was NOT saved, so nothing is lost. Cancel and reopen to get the latest version, then reapply your change."
+        );
+        return;
+      }
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        alert(data.error || "Save failed.");
+        return;
+      }
+      const data = await res.json().catch(() => ({}));
+      setBaseVersion(data.version);
       await onSaved();
       setEditing(false);
     } finally {

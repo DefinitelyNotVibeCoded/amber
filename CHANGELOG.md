@@ -2,6 +2,16 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.21.0 (2026-07-17)
+
+- Added write-safety (optimistic concurrency) so a save can no longer silently overwrite a
+  change made since the note was read. Reads now return a content-version token; a write that
+  carries a stale token is rejected with a 409 instead of clobbering. The editor captures the
+  version when you open a note and, if it changed underneath you (for example an agent wrote to
+  it mid-edit), warns you without losing your text instead of overwriting. Agents get the same
+  guard over MCP: `read_note` now returns `{ path, version, content }` and `write_note` takes an
+  optional `base_version`.
+
 ## 0.20.0 (2026-07-17)
 
 - Added user-definable note templates. Templates are editable markdown files in
