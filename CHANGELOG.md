@@ -2,6 +2,18 @@
 
 All notable changes to Amber are recorded here.
 
+## 0.22.0 (2026-07-17)
+
+- Added a Vault Health scan and per-type schema validation. A new health panel (stethoscope
+  icon in the toolbar, with a dot when there's something to fix) surfaces three things: broken
+  links (pointing at a note that doesn't exist), orphaned notes (nothing links to them), and
+  schema violations. Schema rules live in `.amber/schema.json` (seeded with a sensible default):
+  each type can declare `required` fields and expected `known` fields, so an agent maintaining
+  the vault can't silently drift the frontmatter. The MCP server enforces the schema on
+  `write_note` (missing required fields are rejected with a clear message) and exposes a new
+  `check_vault` tool so agents can audit and clean up the vault themselves. Every issue in the
+  panel is clickable straight to the offending note.
+
 ## 0.21.0 (2026-07-17)
 
 - Added write-safety (optimistic concurrency) so a save can no longer silently overwrite a

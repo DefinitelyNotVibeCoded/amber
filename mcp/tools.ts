@@ -8,6 +8,9 @@ import { appendActivityLogEntry } from "../src/lib/activityLog";
 import { appendAgentPulse } from "../src/lib/agentPulse";
 import { semanticSearchByText } from "../src/lib/embeddings";
 import { listTemplates } from "../src/lib/userTemplates";
+import { loadSchema, validateFrontmatter } from "../src/lib/schema";
+import { scanHealth } from "../src/lib/health";
+import matter from "gray-matter";
 
 function errorResult(message: string) {
   return { content: [{ type: "text" as const, text: message }], isError: true as const };
@@ -190,6 +193,22 @@ export function createAmberServer(): McpServer {
   );
 
   server.registerTool(
+    "check_vault",
+    {
+      title: "Check vault health",
+      description:
+        "Scan the vault for integrity issues: broken links (pointing at a note that does not exist), orphaned notes (nothing links to them), and schema violations (notes missing fields required for their type by .amber/schema.json). Use this to audit and clean up an agent-maintained vault.",
+      inputSchema: z.object({}).strict(),
+      annotations: { readOnlyHint: true, destructiveHint: false, idempotentHint: true, openWorldHint: false },
+    },
+    async () => {
+      const root = getVaultPath();
+      const health = scanHealth(loadVault(root), loadSchema(root));
+      return { content: [{ type: "text", text: JSON.stringify(health, null, 2) }] };
+    }
+  );
+
+  server.registerTool(
     "write_note",
     {
       title: "Write note",
@@ -210,6 +229,14 @@ export function createAmberServer(): McpServer {
     async ({ path, content, base_version }) => {
       const root = getVaultPath();
       try {
+        const parsed = matter(content);
+        const fmType = (parsed.data as { type?: string } | undefined)?.type;
+        const { missing } = validateFrontmatter(fmType, (parsed.data || {}) as Record<string, unknown>, loadSchema(root));
+        if (missing.length) {
+          return errorResult(
+            `Schema: a "${fmType}" note requires ${missing.join(", ")}. Add the missing field(s) and write again.`
+          );
+        }
         let before: string | null = null;
         try {
           before = readNoteRaw(root, path);

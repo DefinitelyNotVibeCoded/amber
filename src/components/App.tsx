@@ -12,6 +12,7 @@ import NewNoteModal from "./NewNoteModal";
 import AddDocumentModal from "./AddDocumentModal";
 import SettingsModal from "./SettingsModal";
 import ActivityLogPanel from "./ActivityLogPanel";
+import HealthPanel from "./HealthPanel";
 import QueryView from "./QueryView";
 import CommandPalette from "./CommandPalette";
 import PluginNotices from "./PluginNotices";
@@ -61,8 +62,10 @@ export default function App() {
   const [showAddDocument, setShowAddDocument] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showActivityLog, setShowActivityLog] = useState(false);
+  const [showHealth, setShowHealth] = useState(false);
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [hasActivity, setHasActivity] = useState(false);
+  const [hasHealthIssues, setHasHealthIssues] = useState(false);
   const [themePreset, setThemePresetState] = useState("amber");
   const [accentOverride, setAccentOverrideState] = useState<string | null>(null);
   const [sidebarWidth, setSidebarWidthState] = useState(DEFAULT_SIDEBAR_WIDTH);
@@ -157,6 +160,13 @@ export default function App() {
   }, [vault]);
 
   useEffect(() => {
+    fetch("/api/health")
+      .then((r) => r.json())
+      .then((d) => setHasHealthIssues((d.counts?.total ?? 0) > 0))
+      .catch(() => {});
+  }, [vault]);
+
+  useEffect(() => {
     if (!selectedPath && vault && vault.notes.length > 0) {
       const idx = vault.notes.find((n) => n.path === "/index.md");
       setSelectedPath(idx ? idx.path : vault.notes[0].path);
@@ -232,8 +242,10 @@ export default function App() {
         onAddDocument={() => setShowAddDocument(true)}
         onOpenSettings={() => setShowSettings(true)}
         onOpenActivityLog={() => setShowActivityLog(true)}
+        onOpenHealth={() => setShowHealth(true)}
         onOpenCommandPalette={() => setShowCommandPalette(true)}
         hasActivity={hasActivity}
+        hasHealthIssues={hasHealthIssues}
       />
       <div className="flex flex-1 min-h-0">
         <Sidebar
@@ -332,6 +344,16 @@ export default function App() {
             handleSelect(path);
           }}
           onReverted={reload}
+        />
+      )}
+
+      {showHealth && (
+        <HealthPanel
+          onClose={() => setShowHealth(false)}
+          onNavigate={(path) => {
+            setShowHealth(false);
+            handleSelect(path);
+          }}
         />
       )}
 

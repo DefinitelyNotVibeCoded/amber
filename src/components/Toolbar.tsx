@@ -1,6 +1,6 @@
 "use client";
 
-import { Network, FileText, Plus, Settings, Search, History, ListFilter, Paperclip, Brain } from "lucide-react";
+import { Network, FileText, Plus, Settings, Search, History, ListFilter, Paperclip, Brain, Stethoscope } from "lucide-react";
 import type { ViewMode } from "./App";
 import Logo from "./Logo";
 import WindowControls from "./WindowControls";
@@ -15,8 +15,10 @@ export default function Toolbar({
   onAddDocument,
   onOpenSettings,
   onOpenActivityLog,
+  onOpenHealth,
   onOpenCommandPalette,
   hasActivity,
+  hasHealthIssues,
 }: {
   vaultRoot: string;
   view: ViewMode;
@@ -27,8 +29,10 @@ export default function Toolbar({
   onAddDocument: () => void;
   onOpenSettings: () => void;
   onOpenActivityLog: () => void;
+  onOpenHealth: () => void;
   onOpenCommandPalette: () => void;
   hasActivity: boolean;
+  hasHealthIssues: boolean;
 }) {
   return (
     <div className="app-drag select-none h-12 shrink-0 border-b border-[var(--border)] bg-[var(--bg-1)]/95 backdrop-blur-sm flex items-center gap-3 px-4">
@@ -127,6 +131,16 @@ export default function Toolbar({
         <History size={15} />
         {hasActivity && (
           <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" />
+        )}
+      </button>
+      <button
+        onClick={onOpenHealth}
+        className="app-no-drag relative p-1.5 rounded-full text-[var(--text-1)] hover:bg-[var(--bg-2)] hover:text-[var(--text-0)] transition-colors"
+        title="Vault health"
+      >
+        <Stethoscope size={15} />
+        {hasHealthIssues && (
+          <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-[var(--danger)]" />
         )}
       </button>
       <button

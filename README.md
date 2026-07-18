@@ -119,6 +119,15 @@ format open and the AI story first-class, and let the rest stay small.
 - **Plugin API**: drop a `.js` file into `.amber/plugins/`, no marketplace,
   no build step, register commands and hook into note-open, backed by the
   same vault data the app itself uses (see [Plugin API](#plugin-api))
+- **Note templates**: shared note shapes as editable files in
+  `.amber/templates/`, with a picker in New Note, so hand-written and
+  agent-written notes follow the same structure
+- **Vault health**: a one-click scan for broken links, orphaned notes, and
+  schema violations (define required fields per type in `.amber/schema.json`);
+  agents can write conformant notes and run the same check over MCP
+- **Write-safety**: a save can't silently clobber a change made since you
+  opened a note, so a human edit and an agent write never quietly overwrite
+  each other
 
 ## Quick start
 
@@ -185,7 +194,7 @@ Every client's exact config (JSON or YAML, file paths, and copy-paste code
 for the OpenAI SDKs) is generated live in **Settings → MCP Server** with real
 absolute paths for your machine, no manual editing required.
 
-### The 8 tools an agent gets
+### The 10 tools an agent gets
 
 | Tool | What it does |
 | --- | --- |
@@ -193,10 +202,12 @@ absolute paths for your machine, no manual editing required.
 | `list_notes` | Every note's path, title, type, tags, and description |
 | `search_notes` | Free-text search plus exact `type`/`tag` filters |
 | `semantic_search` | Find conceptually related notes by embedding similarity, not keyword match |
-| `read_note` | Full raw markdown (frontmatter and body) of one note |
+| `read_note` | Raw markdown of one note, plus a version token for safe writes |
 | `get_backlinks` | Every note that links to a given note |
-| `write_note` | Overwrite an existing note's full content |
-| `create_note` | Create a new OKF-conformant note |
+| `list_templates` | The vault's note templates, so new notes follow shared shapes |
+| `check_vault` | Broken links, orphaned notes, and schema violations to fix |
+| `write_note` | Overwrite a note's content (version-checked, schema-validated) |
+| `create_note` | Create a new OKF-conformant note, optionally from a template |
 
 `write_note` and `create_note` are logged to the Activity Log below, every
 other tool is read-only.
